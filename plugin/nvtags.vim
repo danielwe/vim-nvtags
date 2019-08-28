@@ -55,7 +55,7 @@ command! -nargs=* NVTagsQuery
       \     '2>/dev/null',
       \   ]),
       \ })
-command! -range NVTags execute 'NVTagsQuery' getline(<line1>)
+command! -range NVTags execute 'NVTagsQuery' split(getline(<line1>), ':')[-1]
 
 " URL encode a string, i.e., percent-encode characters if required. Adapted from
 " http://www.danielbigham.ca/cgi-bin/document.pl?mode=Display&DocumentID=1053
