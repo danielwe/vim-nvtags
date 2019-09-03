@@ -129,7 +129,7 @@ A list of links to files with the desired tags will be inserted.
 Try the following mapping to update an already populated list:
 
 ```vim
-nmap <Leader>nt :put ='  '<CR>d}k:NVTags<CR>
+nmap <Leader>np :normal A <CR>d}:NVTags<CR>
 ```
 
 ## Similar plugins
