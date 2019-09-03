@@ -5,7 +5,7 @@ if !executable('rg')
 endif
 
 " Settings
-let s:pattern = shellescape(get(g:, 'nvtags_pattern', '(^|\s)#\S{3}'))
+let s:pattern = shellescape('(^|\s)' . get(g:, 'nvtags_pattern', '#\w\S+') . '(\s|$)')
 let s:globs = get(g:, 'nvtags_globs', [])
 let s:globarg = ''
 for s:glob in s:globs

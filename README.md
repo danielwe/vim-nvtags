@@ -11,17 +11,26 @@ notes.
 
 ## Tagging
 
-By default, tags are anything that matches the pattern `'(^|\s)#\S{3}'`, i.e., words
-starting with a hash '#' followed by three non-whitespace characters. A custom pattern
-can be configured using the `g:nvtags_pattern` variable, for example:
+By default, tags are defined by the pattern `'#\w\S+'`, i.e., a hash `#` followed by a
+word character and then one or more non-whitespace characters. A custom pattern can be
+configured using the `g:nvtags_pattern` variable, for example:
 
-* `let g:nvtags_pattern = '(^|\s)@[A-Z][A-Za-z]'`: words starting with '@' followed by a
-  capital letter and then another letter.
+* `let g:nvtags_pattern = '@[A-Z][0-9A-Za-z]+'`: `@` followed by a capital letter and a
+  one or more alphanumeric characters.
 
-The _first line_ in a file matching the tag pattern is considered the file's tag line.
-`:NVTagsQuery <query>` looks for files in which this tag line matches `<query>`.
+Since `ripgrep` is used for searching, the [Rust regex syntax](https://docs.rs/regex) applies.
 
-Typical usage is to add a tag line at or near the top of a file, like so:
+A file's _tag line_ is taken to be the first line where a tag is present and sandwiched
+between whitespaces or the beginning/end of the line (i.e., the full search pattern when
+identifying the tag line is `'(^|\s){PATTERN}(\s|$)'`, where `{PATTERN}` is replaced
+by the tag pattern). Hence, when setting a custom pattern with `g:nvtags_pattern`, it is
+important to use a pattern that will consume the entirety of any valid tag, not merely a
+prefix.
+
+`:NVTagsQuery <query>` looks for files in which the tag line matches `<query>` using
+the [`fzf` syntax](https://github.com/junegunn/fzf#search-syntax) with exact matching.
+
+Typically, a tag line is added at or near the top of a file, like so:
 
 ```markdown
 # Heading 1
@@ -54,7 +63,7 @@ in any order. Examples:
 
 All searches are case insensitive.
 
-Note that the searches perform prefix matches: `:NVTagsQuery #tag1` will also match
+Note that the search terms match on substrings: `:NVTagsQuery #tag1` will also match
 files tagged with `#tag12`, `#tag123`, and so on, and `:NVTagsQuery !#tag2` will only
 match files not tagged with any of `#tag23`, `#tag234`, and so on. This can be used to
 flexibly support hierarchical tagging: `#tag1` matches both `#tag1/subtag1` and
