@@ -13,27 +13,25 @@ for s:glob in s:globs
 endfor
 
 " Create dynamic tag-based indexes
-function! s:MarkdownLink(filename)
+function! s:MarkdownLink(filename, title)
   return '['
         \ . trim(readfile(a:filename, '', 1)[0], '# ')
         \ . ']('
         \ . s:UrlEncode(a:filename)
+        \ . ' "' . a:title . '"'
         \ . ')'
 endfunction
 
-function! s:Filename(grepline)
-  return split(a:grepline, ':')[0]
+function! s:Handler(grepline)
+  let parts = split(a:grepline, ':')
+  return '* ' . s:MarkdownLink(l:parts[0], trim(l:parts[-1]))
 endfunction
 
 function! s:InsertLinks(greplines)
-  call append(
-        \ line('.'),
-        \ map(
-        \   a:greplines,
-        \   {_, grepline -> '* ' . s:MarkdownLink(s:Filename(grepline))}
-        \ ),
-        \ )
-  call append(line('.'), '  ')
+  if len(a:greplines) > 0
+    call append(line('.'), map(a:greplines, 's:Handler(v:val)'))
+    call append(line('.'), '  ')
+  endif
 endfunction
 
 command! -nargs=* NVTagsQuery

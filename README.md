@@ -85,7 +85,10 @@ By default, the `:NVTags*` commands search all files that are not hidden or excl
 ## Search result handling
 
 For now, the `:NVTags*` commands insert a list of markdown links to the matching files,
-grabbing the link text from the first line in the file and URL-encoding the address. The links are sorted from latest to earliest modification time. This is not customizable; perhaps the future will bring about more flexibility?
+grabbing the link text from the first line in the file, URL-encoding the address, and
+using the tag line as the link title. The links are sorted from most recent to least
+recent modification time. This is not customizable; perhaps the future will bring about
+more flexibility?
 
 ## Usage tips
 
