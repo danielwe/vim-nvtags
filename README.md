@@ -61,8 +61,6 @@ in any order. Examples:
 * `:NVTagsQuery #tag1 | #tag2`: matches all files tagged with `#tag1` _or_ `#tag2`.
 * `:NVTagsQuery #tag1 !#tag2`: matches all files tagged with `#tag1` but _not_ `#tag2`.
 
-All searches are case insensitive.
-
 Note that the search terms match on substrings: `:NVTagsQuery #tag1` will also match
 files tagged with `#tag12`, `#tag123`, and so on, and `:NVTagsQuery !#tag2` will only
 match files not tagged with any of `#tag23`, `#tag234`, and so on. This can be used to
@@ -87,8 +85,7 @@ By default, the `:NVTags*` commands search all files that are not hidden or excl
 ## Search result handling
 
 For now, the `:NVTags*` commands insert a list of markdown links to the matching files,
-grabbing the link text from the first line in the file and URL-encoding the address.
-This is not customizable; perhaps the future will bring about more flexibility?
+grabbing the link text from the first line in the file and URL-encoding the address. The links are sorted from latest to earliest modification time. This is not customizable; perhaps the future will bring about more flexibility?
 
 ## Usage tips
 

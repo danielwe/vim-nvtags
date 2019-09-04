@@ -39,7 +39,7 @@ endfunction
 command! -nargs=* NVTagsQuery
       \ call fzf#run({
       \   'sink*': funcref('s:InsertLinks'),
-      \   'options': ['--exact', '--filter=<args>'],
+      \   'options': ['--exact', '--no-sort', '--filter=<args>'],
       \   'source': join([
       \     'command',
       \     'rg',
@@ -49,7 +49,7 @@ command! -nargs=* NVTagsQuery
       \     '--no-messages',
       \     '--no-heading',
       \     '--with-filename',
-      \     '--ignore-case',
+      \     '--sortr modified',
       \     s:globarg,
       \     s:pattern,
       \     '2>/dev/null',
