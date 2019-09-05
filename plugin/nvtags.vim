@@ -22,14 +22,14 @@ function! s:MarkdownLink(filename, title)
         \ . ')'
 endfunction
 
-function! s:Handler(grepline)
+function! s:MarkdownLinkFromGrep(grepline)
   let parts = split(a:grepline, ':')
   return '* ' . s:MarkdownLink(l:parts[0], trim(l:parts[-1]))
 endfunction
 
 function! s:InsertLinks(greplines)
   if len(a:greplines) > 0
-    call append(line('.'), map(a:greplines, 's:Handler(v:val)'))
+    call append(line('.'), map(a:greplines, 's:MarkdownLinkFromGrep(v:val)'))
     call append(line('.'), '  ')
   endif
 endfunction
@@ -78,13 +78,19 @@ endfunction
 
 function! s:CharacterRequiresUrlEncoding(character)
   let ascii_code = char2nr(a:character)
-  if ascii_code >= 48 && ascii_code <= 57
+  if ascii_code >= 48 && ascii_code <= 57  " digits
     return 0
-  elseif ascii_code >= 65 && ascii_code <= 90
+  elseif ascii_code >= 65 && ascii_code <= 90  " uppercase letters
     return 0
-  elseif ascii_code >= 97 && ascii_code <= 122
+  elseif ascii_code >= 97 && ascii_code <= 122  " lowercase letters
     return 0
-  elseif a:character == "-" || a:character == "_" || a:character == "." || a:character == "~"
+  elseif
+        \ a:character == "-"
+        \ || a:character == "."
+        \ || a:character == "_"
+        \ || a:character == "~"  " unreserved special characters
+    return 0
+  elseif a:character == "/"  " reserved character used for reserved purpose
     return 0
   endif
   return 1
