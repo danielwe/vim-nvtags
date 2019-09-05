@@ -47,7 +47,7 @@ command! -nargs=* NVTagsQuery
       \     '--no-messages',
       \     '--no-heading',
       \     '--with-filename',
-      \     '--sortr modified',
+      \     '--sortr path',
       \     s:globarg,
       \     s:pattern,
       \     '2>/dev/null',
