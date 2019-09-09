@@ -5,7 +5,47 @@ if !executable('rg')
 endif
 
 " Settings
-let s:pattern = shellescape('(^|\s)' . get(g:, 'nvtags_pattern', '#\w\S+') . '(\s|$)')
+function! s:TaglinePattern(prefix, tags)
+  if !empty(a:prefix)
+    let l:tagline_prefix = '\s*' . g:nvtags_tagline_prefix . '\s*:\s*'
+  else
+    let l:tagline_prefix =  '(?:.*:\s*)?'
+  endif
+  return '^' . l:tagline_prefix . '(?:' . a:tags . '(?:$|\s+))+$'
+endfunction
+
+function! s:QuerylinePattern(prefix, tags)
+  let queryline = '%(.*:\s*)?\zs%(%(''|\^|!\^?)?'
+        \ . s:RustToVimRegex(a:tags)
+        \ . '\$?\ze%($|\s+))+$'
+  if !empty(a:prefix)
+    let tagline = s:TaglinePattern(a:prefix, a:tags)
+    let queryline = '%(' . s:RustToVimRegex(l:tagline) . ')@!' . l:queryline
+  endif
+  return '\v^' . l:queryline
+endfunction
+
+" This clearly covers only a tiny part of two syntaxes that are incompatible anyway.
+" Produces very magic (\v) vim regexes.
+let s:rust_to_vim_regex = {
+      \ '\v\(\?:': '%(',
+      \ '\v\C\\w': '\\i',
+      \ '\v\C\\W': '%(\\i@!.)',
+      \ }
+
+function! s:RustToVimRegex(regex)
+  let l:regex = a:regex
+  for [pattern, substitution] in items(s:rust_to_vim_regex)
+    let regex = substitute(l:regex, pattern, substitution, 'g')
+  endfor
+  return l:regex
+endfunction
+
+let s:prefix = get(g:, 'nvtags_tagline_prefix', '')
+let s:tags = get(g:, 'nvtags_pattern', '#\w{2,}')
+let g:nvtags_tagline_pattern = s:TaglinePattern(s:prefix, s:tags)
+let g:nvtags_queryline_pattern = s:QuerylinePattern(s:prefix, s:tags)
+
 let s:globs = get(g:, 'nvtags_globs', [])
 let s:globarg = ''
 for s:glob in s:globs
@@ -27,33 +67,41 @@ function! s:MarkdownLinkFromGrep(grepline)
   return '* ' . s:MarkdownLink(l:parts[0], trim(l:parts[-1]))
 endfunction
 
-function! s:InsertLinks(greplines)
+function! s:AppendLinks(lnum, greplines)
   if len(a:greplines) > 0
-    call append(line('.'), map(a:greplines, 's:MarkdownLinkFromGrep(v:val)'))
-    call append(line('.'), '  ')
+    call append(a:lnum, ['  '] + map(a:greplines, 's:MarkdownLinkFromGrep(v:val)'))
   endif
 endfunction
 
-command! -nargs=* NVTagsQuery
-      \ call fzf#run({
-      \   'sink*': funcref('s:InsertLinks'),
-      \   'options': ['--exact', '--no-sort', '--filter=<args>'],
-      \   'source': join([
-      \     'command',
-      \     'rg',
-      \     '--max-count 1',
-      \     '--follow',
-      \     '--color never',
-      \     '--no-messages',
-      \     '--no-heading',
-      \     '--with-filename',
-      \     '--sortr path',
-      \     s:globarg,
-      \     s:pattern,
-      \     '2>/dev/null',
-      \   ]),
-      \ })
-command! -range NVTags execute 'NVTagsQuery' split(getline(<line1>), ':')[-1]
+command! -range -bar NVTagsClear execute "normal mt"
+      \ | execute "<line2>normal A\<Space>\<Esc>d}`t"
+
+command! -bang -nargs=? -range NVTags if !empty('<bang>') | <line2>NVTagsClear | endif
+      \ | call fzf#run({
+      \     'sink*': {greplines -> s:AppendLinks(<line2>, greplines)},
+      \     'options': ['--exact', '--no-sort', '--filter=<args>'],
+      \     'source': join([
+      \       'command',
+      \       'rg',
+      \       '--max-count 1',
+      \       '--follow',
+      \       '--color never',
+      \       '--no-messages',
+      \       '--no-heading',
+      \       '--with-filename',
+      \       '--sortr path',
+      \       s:globarg,
+      \       shellescape(g:nvtags_tagline_pattern),
+      \       '2>/dev/null',
+      \     ]),
+      \   })
+command! -bang -range NVTagsHere
+      \ execute '<line2>NVTags<bang>' split(getline('.'), ':')[-1]
+
+command! -bang NVTagsAll
+      \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsHere<bang>' | normal ``
+command! NVTagsClearAll
+      \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsClear' | normal ``
 
 " URL encode a string, i.e., percent-encode characters if required. Adapted from
 " http://www.danielbigham.ca/cgi-bin/document.pl?mode=Display&DocumentID=1053
