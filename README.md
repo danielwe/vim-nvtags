@@ -6,7 +6,7 @@ These commands can for example be used to maintain a dynamic index to a collecti
 
 ## Tagging
 
-By default, tags are defined by the pattern `'#\w{2,}'`, i.e., `#` followed by at least two word characters. A custom pattern can be configured using the `g:nvtags_pattern` variable; for example, if you want tags to be `@`-prefixed, capitalized, ASCII-only words with two or more letters, try `let g:nvtags_pattern = '@[[:upper:]][[:alpha:]]+'` .
+By default, tags are defined by the pattern `'#\w{2,}'`, i.e., `#` followed by at least two word characters. A custom pattern can be configured using the `g:nvtags_pattern` variable; for example, if you want tags to be `@`-prefixed, capitalized, ASCII-only words with two or more letters, try `let g:nvtags_pattern = '@[[:upper:]][[:alpha:]]+'`.
 
 Since `ripgrep` is used for searching, the [Rust regex syntax](https://docs.rs/regex) applies.
 
@@ -32,7 +32,8 @@ Tag list: #all #the #tags
 Lorem ipsum...
 ```
 
-The full pattern used for matching tag lines is available in `g:nvtags_tagline_pattern`. _Tip:_ if you also use [`notational-fzf-vim`](https://github.com/alok/notational-fzf-vim), try defining `command! -NT execute 'NV' g:nvtags_tagline_pattern`, and use `:NT` to filter tag lines interactively with fzf.
+The full pattern used for matching tag lines is available in `g:nvtags_tagline_pattern`.
+> _Tip:_ if you also use [`notational-fzf-vim`](https://github.com/alok/notational-fzf-vim), try defining `command! -bang NT execute 'NV<bang>' g:nvtags_tagline_pattern` to filter tag lines interactively with fzf.
 
 ## Querying
 
@@ -100,7 +101,7 @@ Update each list by placing the cursor on the query line and running `:NVTagsHer
 
 This plugin is heavily inspired by, and built to complement, <https://github.com/alok/notational-fzf-vim>, which provides interactive full-text search based on the same mechanism.
 
-### Proper documentation
+## Proper documentation
 
 Someday, maybe.
 
