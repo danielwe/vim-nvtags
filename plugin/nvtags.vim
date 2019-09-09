@@ -73,6 +73,10 @@ function! s:AppendLinks(lnum, greplines)
   endif
 endfunction
 
+function! g:NVTagsGetQuery(queryline)
+  return split(a:queryline, ':')[-1]
+endfunction
+
 command! -range -bar NVTagsClear execute "normal mt"
       \ | execute "<line2>normal A\<Space>\<Esc>d}`t"
 
@@ -96,7 +100,7 @@ command! -bang -nargs=? -range NVTags if !empty('<bang>') | <line2>NVTagsClear |
       \     ]),
       \   })
 command! -bang -range NVTagsHere
-      \ execute '<line2>NVTags<bang>' split(getline('.'), ':')[-1]
+      \ execute '<line2>NVTags<bang>' g:NVTagsGetQuery(getline('.'))
 
 command! -bang NVTagsAll
       \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsHere<bang>' | normal ``

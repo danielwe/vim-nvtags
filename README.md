@@ -33,7 +33,6 @@ Lorem ipsum...
 ```
 
 The full pattern used for matching tag lines is available in `g:nvtags_tagline_pattern`.
-> _Tip:_ if you also use [`notational-fzf-vim`](https://github.com/alok/notational-fzf-vim), try defining `command! -bang NT execute 'NV<bang>' g:nvtags_tagline_pattern` to filter tag lines interactively with fzf.
 
 ## Querying
 
@@ -53,6 +52,16 @@ The commands can be called with an optional line number, e.g., `:5NVTags <query>
 The command `:NVTagsAll` runs `:NVTagsHere` on all query lines in the buffer. If `g:nvtags_tagline_prefix` remains unset, a query line is essentially the same as a tag line, but also allows fzf modifiers around the tag search terms, i.e., one of `',^,!,!^` at the start and/or `$` at the end. If `g:nvtags_tagline_prefix` is nonempty, a query line is any such line _except_ a valid tag line.
 
 Note that `:NVTagsAll` relies on a very rudimentary and experimental translation of regexes from rust syntax to vim syntax.<sup id="fnref1">[[1]](#fn1)</sup> The pattern used to match query lines can be inspected in `g:nvtags_queryline_pattern`.
+
+### Interoperability with `notational-vim-fzf`
+
+If [`notational-fzf-vim`](https://github.com/alok/notational-fzf-vim) is installed, this plugin defines two additional commands for interactive tag searches:
+
+* `:NT[!] <query>`:
+Starts an interactive fzf search over tag lines; like running `:execute 'NV[!]' g:nvtags_tagline_pattern`. The fzf query field will be prefilled with any arguments passed to `:NT` (this only works without the `!`).
+
+* `:NTHere`:
+Like `:NT`, but extracts the prefilled fzf query from the current line, like `:NVTagsHere`.
 
 ## Search result handling
 
