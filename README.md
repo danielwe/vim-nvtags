@@ -51,15 +51,11 @@ The commands can be called with an optional line number, e.g., `:5NVTags <query>
 
 The command `:NVTagsAll` runs `:NVTagsHere` on all query lines in the buffer. If `g:nvtags_tagline_prefix` remains unset, a query line is essentially the same as a tag line, but also allows fzf modifiers around the tag search terms, i.e., one of `',^,!,!^` at the start and/or `$` at the end. If `g:nvtags_tagline_prefix` is nonempty, a query line is any such line _except_ a valid tag line.
 
-Note that `:NVTagsAll` relies on a very rudimentary and experimental translation of regexes from rust syntax to vim syntax[^regextrans]. The pattern used to match query lines can be inspected in `g:nvtags_queryline_pattern`.
-
-[^regextrans]: In addition to purely syntactical issues, some of the character classes are incompatible. Here we replace `\w` in rust with `\i` in vim in an attempt to approximate a consistent treatment of non-ASCII letters.
+Note that `:NVTagsAll` relies on a very rudimentary and experimental translation of regexes from rust syntax to vim syntax.<sup id="fnref1">[[1]](#fn1)</sup> The pattern used to match query lines can be inspected in `g:nvtags_queryline_pattern`.
 
 ## Search result handling
 
-For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first line in the file and URL-encoding the address as needed. The links are sorted in inverse alphabetical order by file path[^sort]. This is not customizable; perhaps the future will bring about more flexibility?
-
-[^sort]: The rationale for this sort order is that links will appear in inverse chronological order if timestamps are used as file names, e.g., `20190908225957.md`. Try a mapping like `nmap <Leader>nn :execute 'edit' . strftime("%Y%m%d%H%M%S") . '.md'<CR>` to automate this.
+For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first line in the file and URL-encoding the address as needed. The links are sorted in inverse alphabetical order by file path.<sup id="fnref2">[[2]](#fn2)</sup> This is not customizable; perhaps the future will bring about more flexibility?
 
 The command `:NVTagsClear` deletes a previously appended list of links below the given line.
 
@@ -107,3 +103,9 @@ This plugin is heavily inspired by, and built to complement, <https://github.com
 ### Proper documentation
 
 Someday, maybe.
+
+---
+
+1. <a id="fn1"></a>In addition to purely syntactical issues, some of the character classes are incompatible. Here we replace `\w` in rust with `\i` in vim in an attempt to approximate a consistent treatment of non-ASCII letters. [↩](#fnref1)
+
+2. <a id="fn2"></a>The rationale for this sort order is that links will appear in inverse chronological order if timestamps are used as file names, e.g., `20190908225957.md`. Try a mapping like `nmap <Leader>nn :execute 'edit' . strftime("%Y%m%d%H%M%S") . '.md'<CR>` to automate this. [↩](#fnref2)
