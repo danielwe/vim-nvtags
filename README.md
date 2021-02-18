@@ -45,6 +45,8 @@ The `:NVTags` command matches tag lines to a query using [`fzf`'s `--exact` mode
 
 Note that the search terms match on substrings: `:NVTags #tag1` will also match files tagged with `#tag12`, `#tag123`, and so on, and `:NVTags !#tag2` will only match files not tagged with any of `#tag23`, `#tag234`, and so on. This can be used to flexibly support hierarchical tagging: `#tag1` matches both `#tag1/subtag1` and `#tag1/subtag2`.
 
+The query can optionally begin with a number to limit the number of search results. For example, `:NVTags 5 #tag1` will return up to 5 files tagged with `#tag1`. These will be the first 5 lines returned from the search; see (##search-result-handling) for sort order.
+
 The command `:NVTagsHere`, uses the contents of the current line as the search query, discarding any prefix up to and including the last colon `:` on the line.
 
 The commands can be called with an optional line number, e.g., `:5NVTags <query>` or `.-1NVTagsHere`. The line number detemines where the link list is appended, but not which line the query is extracted from: `:NVTagsHere` always takes its query from the current cursor line.
@@ -95,11 +97,10 @@ You can create a dynamic index page for a note collection by doing something lik
 * [Space-Time Approach to Non-Relativistic Quantum Mechanics [@Feynman1948]](20181224170000.md "#article #quantum #physics #Feynman")
 * [...]
 
-**Work meetings and talks**: #work #meeting | #talk
+**The two latest work meetings and talks**: 2 #work #meeting | #talk
   
 * [Meeting with project A stakeholders](20190715110311.md "#meeting #projectA #work")
 * [Department HSE briefing](20190712143148.md "#talk #work #misc")
-* [...]
 
 [...]
 ```

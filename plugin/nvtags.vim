@@ -15,7 +15,7 @@ function! s:TaglinePattern(prefix, tags)
 endfunction
 
 function! s:QuerylinePattern(prefix, tags)
-  let queryline = '%(.*:\s*)?\zs%(%(''|\^|!\^?)?'
+  let queryline = '%(.*:\s*)?\zs\d*\s*%(%(''|\^|!\^?)?'
         \ . s:RustToVimRegex(a:tags)
         \ . '\$?\ze%($|\s+))+$'
   if !empty(a:prefix)
@@ -67,22 +67,32 @@ function! s:MarkdownLinkFromGrep(grepline)
   return '* ' . s:MarkdownLink(l:parts[0], trim(l:parts[-1]))
 endfunction
 
-function! s:AppendLinks(lnum, greplines)
+function! s:AppendLinks(lnum, greplines, n)
+  if a:n > 0
+    let l:n = a:n
+  else
+    let l:n = -1
+  endif
   if len(a:greplines) > 0
-    call append(a:lnum, ['  '] + map(a:greplines, 's:MarkdownLinkFromGrep(v:val)'))
+    call append(a:lnum, ['  '] + map(a:greplines[:l:n], 's:MarkdownLinkFromGrep(v:val)'))
   endif
 endfunction
 
 function! g:NVTagsGetQuery(queryline)
-  return split(a:queryline, ':')[-1]
+  return trim(split(a:queryline, ':')[-1])
 endfunction
 
 command! -range -bar NVTagsClear execute "normal mt"
-      \ | execute "<line2>normal A\<Space>\<Esc>d}`t"
+      \ | execute "<line1>normal A\<Space>\<Esc>d}`t"
 
-command! -bang -nargs=? -range NVTags if !empty('<bang>') | <line2>NVTagsClear | endif
+command! -bang -nargs=? -range -count NVTags
+      \   if !empty('<bang>')
+      \ |   <line1>NVTagsClear
+      \ | endif
       \ | call fzf#run({
-      \     'sink*': {greplines -> s:AppendLinks(<line2>, greplines)},
+      \     'sink*': {
+      \       greplines -> s:AppendLinks(<line1>, greplines, <count> - <line1>)
+      \     },
       \     'options': ['--exact', '--no-sort', '--filter=<args>'],
       \     'source': join([
       \       'command',
@@ -100,7 +110,7 @@ command! -bang -nargs=? -range NVTags if !empty('<bang>') | <line2>NVTagsClear |
       \     ]),
       \   })
 command! -bang -range NVTagsHere
-      \ execute '<line2>NVTags<bang>' g:NVTagsGetQuery(getline('.'))
+      \ execute '<line1>NVTags<bang> ' g:NVTagsGetQuery(getline('.'))
 
 command! -bang NVTagsAll
       \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsHere<bang>' | normal ``
