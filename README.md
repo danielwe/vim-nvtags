@@ -67,11 +67,26 @@ Like `:NT`, but extracts the prefilled fzf query from the current line, like `:N
 
 ## Search result handling
 
-For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first line in the file and URL-encoding the address as needed. The links are sorted in inverse alphabetical order by file path.<sup id="fnref2">[[2]](#fn2)</sup> This is not customizable; perhaps the future will bring about more flexibility?
+For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first line in the file and percent encoding the address to obtain a valid URL. The links are sorted in inverse alphabetical order by file path.<sup id="fnref2">[[2]](#fn2)</sup> This is not customizable; perhaps the future will bring about more flexibility?
 
 The command `:NVTagsClear` deletes a previously appended list of links below the given line.
 
 The banged commands `:NVTags!`, `NVTagsHere!`, and `:NVTagsAll!` _replace_ any previously inserted list of links instead of merely appending.
+
+## Fixing `gf` for percent encoded links
+
+The built-in `gf` keybinding for opening the file under the cursor does not decode file names encoded with percent encoding as used in URLs (e.g., representing a space with `%20`), and would therefore not work out of the box on links inserted by this plugin if the filename contains any characters that require such encoding. This plugin fixes this by setting `includeexpr`, but only for file types given in `g:nvtags_globs` (see below). Specifically, it uses only the inclusive file type globs, i.e., globs on the form `*.ext`, and sets `includeexpr` for all matching buffers.
+
+If you want to use this functionality for file types that you do not want to list in `g:nvtags_globs`, define the following autocommand in your `.vimrc`:
+
+```vim
+augroup DecodeLinks
+  " Fix gf for html
+  autocmd! BufRead *.html setlocal includeexpr=NVTagsPercentDecode(v:fname)
+augroup END
+```
+
+Note that certain plugins, such as [vim-pandoc](https://github.com/vim-pandoc/vim-pandoc), may override `gf` for certain file types such that it no longer applies `includeexpr`. The fix provided by this plugin will not work in such cases. The workaround is to disable this behavior by the implicated plugin, i.e., adding `let g:pandoc#hypertext#use_default_mappings = 0` or similar to your `.vimrc`.
 
 ## Filename filtering
 

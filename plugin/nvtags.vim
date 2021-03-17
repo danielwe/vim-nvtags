@@ -58,7 +58,7 @@ function! s:MarkdownLink(filename, title)
   return '['
         \ . trim(readfile(a:filename, '', 1)[0], '# ')
         \ . ']('
-        \ . s:UrlEncode(a:filename)
+        \ . s:PercentEncode(a:filename)
         \ . ' "' . a:title . '"'
         \ . ')'
 endfunction
@@ -118,43 +118,40 @@ command! -bang NVTagsAll
 command! NVTagsClearAll
       \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsClear' | normal ``
 
-" URL encode a string, i.e., percent-encode characters if required. Adapted from
-" http://www.danielbigham.ca/cgi-bin/document.pl?mode=Display&DocumentID=1053
-function! s:UrlEncode(string)
-  let result = ""
-  let characters = split(a:string, '.\zs')
-  for character in l:characters
-    if s:CharacterRequiresUrlEncoding(l:character)
-      let i = 0
-      while l:i < strlen(l:character)
-        let byte = strpart(l:character, l:i, 1)
-        let decimal = char2nr(l:byte)
-        let result = l:result . "%" . printf("%02x", l:decimal)
-        let i += 1
-      endwhile
-    else
-      let result = l:result . l:character
-    endif
-  endfor
-  return result
+" Percent encode a URL, i.e., replace characters with percent codes as required. Adapted
+" from http://www.danielbigham.ca/cgi-bin/document.pl?mode=Display&DocumentID=1053
+function! s:PercentEncode(string)
+  return join(map(split(a:string, '\zs'), 's:PercentEncodeCharacter(v:val)'), "")
 endfunction
 
-function! s:CharacterRequiresUrlEncoding(character)
-  let ascii_code = char2nr(a:character)
-  if ascii_code >= 48 && ascii_code <= 57  " digits
-    return 0
-  elseif ascii_code >= 65 && ascii_code <= 90  " uppercase letters
-    return 0
-  elseif ascii_code >= 97 && ascii_code <= 122  " lowercase letters
-    return 0
-  elseif
-        \ a:character == "-"
-        \ || a:character == "."
-        \ || a:character == "_"
-        \ || a:character == "~"  " unreserved special characters
-    return 0
-  elseif a:character == "/"  " reserved character used for reserved purpose
-    return 0
+function! s:PercentEncodeCharacter(char)
+  let l:decimal = char2nr(a:char)
+  if l:decimal >= 45 && l:decimal <= 57  " digits and -./
+    return a:char
+  elseif l:decimal >= 65 && l:decimal <= 90 " uppercase letters
+    return a:char
+  elseif l:decimal >= 97 && l:decimal <= 122 " lowercase letters
+    return a:char
+  elseif l:decimal == 95 || l:decimal == 126 " _~
+    return a:char
   endif
-  return 1
+  let l:bytes = []
+  for l:i in range(strlen(a:char))
+    call add(l:bytes, printf("%%%02X", char2nr(strpart(a:char, l:i, 1))))
+  endfor
+  return join(l:bytes, "")
 endfunction
+
+function! NVTagsPercentDecode(string)
+  return substitute(a:string, '\v\%(\x\x)', '\=printf("%c", "0x" . submatch(1))', 'g')
+endfunction
+
+let s:extpattern = '\v\*\.(\f&[^./])+'
+let s:extglobs = join(filter(s:globs, 'v:val =~# s:extpattern'), ",")
+
+augroup nvtags
+  if s:extglobs != ""
+    execute "autocmd! BufRead" s:extglobs
+          \ "setlocal includeexpr=NVTagsPercentDecode(v:fname)"
+  endif
+augroup END
