@@ -6,7 +6,7 @@ These commands can for example be used to maintain a dynamic index to a collecti
 
 ## Tagging
 
-By default, tags are defined by the pattern `'#\w{2,}'`, i.e., `#` followed by at least two word characters. A custom pattern can be configured using the `g:nvtags_pattern` variable; for example, if you want tags to be `@`-prefixed, capitalized, ASCII-only words with two or more letters, try `let g:nvtags_pattern = '@[[:upper:]][[:alpha:]]+'`.
+By default, tags are defined by the pattern `'#\w{2,}(/|\w)*'`, i.e., `#` followed by at least two word characters, and then any sequence of forward slashes and more word characters. A custom pattern can be configured using the `g:nvtags_pattern` variable; for example, if you want tags to be `@`-prefixed, capitalized, ASCII-only words with two or more letters, try `let g:nvtags_pattern = '@[[:upper:]][[:alpha:]]+'`.
 
 Since `ripgrep` is used for searching, the [Rust regex syntax](https://docs.rs/regex) applies.
 
@@ -94,13 +94,13 @@ You can create a dynamic index page for a note collection by doing something lik
 
 **Current physics reading notes**: #article #physics !#archived
   
-* [Space-Time Approach to Non-Relativistic Quantum Mechanics [@Feynman1948]](20181224170000.md "#article #quantum #physics #Feynman")
+* [Space-Time Approach to Non-Relativistic Quantum Mechanics [@Feynman1948]](20181224170000.md "#article #physics/quantum #Feynman")
 * [...]
 
 **The two latest work meetings and talks**: 2 #work #meeting | #talk
   
-* [Meeting with project A stakeholders](20190715110311.md "#meeting #projectA #work")
-* [Department HSE briefing](20190712143148.md "#talk #work #misc")
+* [Meeting with project A stakeholders](20190715110311.md "#meeting #work/projectA")
+* [Department HSE briefing](20190712143148.md "#talk #work")
 
 [...]
 ```

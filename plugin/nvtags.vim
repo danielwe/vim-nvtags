@@ -31,6 +31,7 @@ let s:rust_to_vim_regex = {
       \ '\v\(\?:': '%(',
       \ '\v\C\\w': '\\i',
       \ '\v\C\\W': '%(\\i@!.)',
+      \ '\v\/': '\\/',
       \ }
 
 function! s:RustToVimRegex(regex)
@@ -42,7 +43,7 @@ function! s:RustToVimRegex(regex)
 endfunction
 
 let s:prefix = get(g:, 'nvtags_tagline_prefix', '')
-let s:tags = get(g:, 'nvtags_pattern', '#\w{2,}')
+let s:tags = get(g:, 'nvtags_pattern', '#\w{2,}(/|\w)*')
 let g:nvtags_tagline_pattern = s:TaglinePattern(s:prefix, s:tags)
 let g:nvtags_queryline_pattern = s:QuerylinePattern(s:prefix, s:tags)
 
