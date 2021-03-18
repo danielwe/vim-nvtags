@@ -67,7 +67,7 @@ Like `:NT`, but extracts the prefilled fzf query from the current line, like `:N
 
 ## Search result handling
 
-For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first line in the file and [percent-encoding](#percent-encodingdecoding) the address to obtain a valid URL. The links are sorted in inverse alphabetical order by file path.<sup id="fnref2">[[2]](#fn2)</sup> This is not customizable; perhaps the future will bring about more flexibility?
+For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first line in the file and [percent-encoding](#percent-encodingdecoding) the address to obtain a valid URL. The links are sorted in inverse order of last modification time, such that the last modified matching file is listed first. This is not customizable; perhaps the future will bring about more flexibility?
 
 The command `:NVTagsClear` deletes a previously appended list of links below the given line.
 
@@ -149,5 +149,3 @@ Someday, maybe.
 ---
 
 1. <a id="fn1"></a>In addition to purely syntactical issues, some of the character classes are incompatible. Here we replace `\w` in rust with `\i` in vim in an attempt to approximate a consistent treatment of non-ASCII letters. [↩](#fnref1)
-
-2. <a id="fn2"></a>The rationale for this sort order is that links will appear in inverse chronological order if timestamps are used as file names, e.g., `20190908225957.md`. Try a mapping like `nmap <Leader>nn :execute 'edit' . strftime("%Y%m%d%H%M%S") . '.md'<CR>` to automate this. [↩](#fnref2)

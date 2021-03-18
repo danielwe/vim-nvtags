@@ -104,7 +104,7 @@ command! -bang -nargs=? -range -count NVTags
       \       '--no-messages',
       \       '--no-heading',
       \       '--with-filename',
-      \       '--sortr path',
+      \       '--sortr modified',
       \       s:globarg,
       \       shellescape(g:nvtags_tagline_pattern),
       \       '2>/dev/null',
