@@ -67,26 +67,11 @@ Like `:NT`, but extracts the prefilled fzf query from the current line, like `:N
 
 ## Search result handling
 
-For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first line in the file and percent encoding the address to obtain a valid URL. The links are sorted in inverse alphabetical order by file path.<sup id="fnref2">[[2]](#fn2)</sup> This is not customizable; perhaps the future will bring about more flexibility?
+For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first line in the file and [percent-encoding](#percent-encodingdecoding) the address to obtain a valid URL. The links are sorted in inverse alphabetical order by file path.<sup id="fnref2">[[2]](#fn2)</sup> This is not customizable; perhaps the future will bring about more flexibility?
 
 The command `:NVTagsClear` deletes a previously appended list of links below the given line.
 
 The banged commands `:NVTags!`, `NVTagsHere!`, and `:NVTagsAll!` _replace_ any previously inserted list of links instead of merely appending.
-
-## Fixing `gf` for percent encoded links
-
-The built-in `gf` keybinding for opening the file under the cursor does not decode file names encoded with percent encoding as used in URLs (e.g., representing a space with `%20`), and would therefore not work out of the box on links inserted by this plugin if the filename contains any characters that require such encoding. This plugin fixes this by setting `includeexpr`, but only for file types given in `g:nvtags_globs` (see below). Specifically, it uses only the inclusive file type globs, i.e., globs on the form `*.ext`, and sets `includeexpr` for all matching buffers.
-
-If you want to use this functionality for file types that you do not want to list in `g:nvtags_globs`, define the following autocommand in your `.vimrc`:
-
-```vim
-augroup DecodeLinks
-  " Fix gf for html
-  autocmd! BufRead *.html setlocal includeexpr=NVTagsPercentDecode(v:fname)
-augroup END
-```
-
-Note that certain plugins, such as [vim-pandoc](https://github.com/vim-pandoc/vim-pandoc), may override `gf` for certain file types such that it no longer applies `includeexpr`. The fix provided by this plugin will not work in such cases. The workaround is to disable this behavior by the implicated plugin, i.e., adding `let g:pandoc#hypertext#use_default_mappings = 0` or similar to your `.vimrc`.
 
 ## Filename filtering
 
@@ -104,23 +89,54 @@ You can create a dynamic index page for a note collection by doing something lik
 
 **Journal**: #journal
   
-* [2019-08-28 New plugin out!](20190828124102.md "#journal #vim")
+* [2019-08-28 New plugin out!](New%20plugin%20out%21%2020190828124102.md "#journal #vim")
 * [...]
 
 **Current physics reading notes**: #article #physics !#archived
   
-* [Space-Time Approach to Non-Relativistic Quantum Mechanics [@Feynman1948]](20181224170000.md "#article #physics/quantum #Feynman")
+* [Space-Time Approach to Non-Relativistic Quantum Mechanics [@Feynman1948]](%40Feynman1948%2020181224170000.md "#article #physics/quantum #Feynman")
 * [...]
 
 **The two latest work meetings and talks**: 2 #work #meeting | #talk
   
-* [Meeting with project A stakeholders](20190715110311.md "#meeting #work/projectA")
-* [Department HSE briefing](20190712143148.md "#talk #work")
+* [Meeting with project A stakeholders](Meeting%20with%20project%20A%20stakeholders%2020190715110311.md "#meeting #work/projectA")
+* [Department HSE briefing](Department%20HSE%20briefing%2020190712143148.md "#talk #work")
 
 [...]
 ```
 
 Update each list by placing the cursor on the query line and running `:NVTagsHere!`. Update all of them at once by running `:NVTagsAll!`.
+
+## Percent-encoding/decoding
+
+The `:NVTags[Here]` commands take care to percent-encode filenames as required to obtain a valid URL and thus a valid markdown link. Percent-encoding means replacing special characters with their literal byte values written out as `%XX`, where `X` represents a hexadecimal digit. For example, a space becomes `%20`. See <https://en.wikipedia.org/wiki/Percent-encoding> for details.
+
+The implementation of percent-encoding in this plugin is exposed through the functions `NVTagsPercent{Encode,Decode}`, which take a single string argument and returns the corresponding encoded/decoded string. Perhaps more usefully, the plugin also provides operator functions `NVTagsPercent{Encode,Decode}Op`, which can be mapped to operators that replace a text object or selection with its percent encoded/decoded counterpart. To make use of this, put something like the following in your `.vimrc`:
+
+```vim
+" Percent encoding/decoding
+nmap <silent> <expr> <Leader>ne NVTagsPercentEncodeOp()
+vmap <silent> <expr> <Leader>ne NVTagsPercentEncodeOp()
+nmap <silent> <expr> <Leader>nd NVTagsPercentDecodeOp()
+vmap <silent> <expr> <Leader>nd NVTagsPercentDecodeOp()
+```
+
+Hit `<Leader>ndi(` inside the URL part of a percent-encoded markdown link to see this in action.
+
+### Fixing `gf`
+
+The built-in `gf` keybinding for opening the file under the cursor does not decode percent-encoded filenames, and hence fails to open links inserted by this plugin if the filename contains special characters. This plugin fixes this problem by setting `includeexpr`, but only for file types given in `g:nvtags_globs` (see below). Specifically, it considers only inclusive file type globs, i.e., globs of the form `*.ext`, and sets `includeexpr` for all matching buffers.
+
+If you want to use this functionality for file types that you do not want to list in `g:nvtags_globs`, define the following autocommand in your `.vimrc`:
+
+```vim
+augroup DecodeLinks
+  " Fix gf for html
+  autocmd! BufRead *.html setlocal includeexpr=NVTagsPercentDecode(v:fname)
+augroup END
+```
+
+Note that some plugins, such as [vim-pandoc](https://github.com/vim-pandoc/vim-pandoc), may override `gf` for certain file types such that `includeexpr` is no longer used, rendering the fix provided here useless. The workaround is to disable this behavior by the implicated plugin, i.e., adding something like `let g:pandoc#modules#disabled = ["hypertext"]` or `let g:pandoc#hypertext#use_default_mappings = 0` to your `.vimrc`.
 
 ## Similar plugins
 

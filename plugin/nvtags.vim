@@ -58,7 +58,7 @@ function! s:MarkdownLink(filename, title)
   return '['
         \ . trim(readfile(a:filename, '', 1)[0], '# ')
         \ . ']('
-        \ . s:PercentEncode(a:filename)
+        \ . NVTagsPercentEncode(a:filename)
         \ . ' "' . a:title . '"'
         \ . ')'
 endfunction
@@ -79,12 +79,12 @@ function! s:AppendLinks(lnum, greplines, n)
   endif
 endfunction
 
-function! g:NVTagsGetQuery(queryline)
+function! NVTagsGetQuery(queryline)
   return trim(split(a:queryline, ':')[-1])
 endfunction
 
-command! -range -bar NVTagsClear execute "normal mt"
-      \ | execute "<line1>normal A\<Space>\<Esc>d}`t"
+command! -range -bar NVTagsClear execute "normal! mt"
+      \ | execute "<line1>normal! A\<Space>\<Esc>d}`t"
 
 command! -bang -nargs=? -range -count NVTags
       \   if !empty('<bang>')
@@ -111,17 +111,21 @@ command! -bang -nargs=? -range -count NVTags
       \     ]),
       \   })
 command! -bang -range NVTagsHere
-      \ execute '<line1>NVTags<bang> ' g:NVTagsGetQuery(getline('.'))
+      \ execute '<line1>NVTags<bang>' NVTagsGetQuery(getline('.'))
 
 command! -bang NVTagsAll
-      \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsHere<bang>' | normal ``
+      \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsHere<bang>' | normal! ``
 command! NVTagsClearAll
-      \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsClear' | normal ``
+      \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsClear' | normal! ``
 
 " Percent encode a URL, i.e., replace characters with percent codes as required. Adapted
 " from http://www.danielbigham.ca/cgi-bin/document.pl?mode=Display&DocumentID=1053
-function! s:PercentEncode(string)
+function! NVTagsPercentEncode(string)
   return join(map(split(a:string, '\zs'), 's:PercentEncodeCharacter(v:val)'), "")
+endfunction
+
+function! NVTagsPercentDecode(string)
+  return substitute(a:string, '\v\%(\x\x)', '\=printf("%c", "0x" . submatch(1))', 'g')
 endfunction
 
 function! s:PercentEncodeCharacter(char)
@@ -142,8 +146,38 @@ function! s:PercentEncodeCharacter(char)
   return join(l:bytes, "")
 endfunction
 
-function! NVTagsPercentDecode(string)
-  return substitute(a:string, '\v\%(\x\x)', '\=printf("%c", "0x" . submatch(1))', 'g')
+" Create operator functions that can be mapped to encode/decode text in a buffer
+function! NVTagsPercentEncodeOp(type="")
+  return s:PercentOp(a:type, "Encode")
+endfunction
+
+function! NVTagsPercentDecodeOp(type="")
+  return s:PercentOp(a:type, "Decode")
+endfunction
+
+function! s:PercentOp(type, codec)
+  if a:type == ""
+    execute "set operatorfunc=NVTagsPercent" . a:codec . "Op"
+    return 'g@'
+  endif
+
+  let l:sel_save = &selection
+  let l:visual_marks_save = [getpos("'<"), getpos("'>")]
+
+  try
+    set selection=inclusive
+    let l:select = {"line": "'[V']", "char": "`[v`]", "block": "`[\<c-v>`]"}
+    normal! m`
+    execute "noautocmd keepjumps normal! \<Esc>" get(l:select, a:type, "")
+    execute 'noautocmd keepjumps %s/\v%V\_.*%V\_./\=NVTagsPercent' . a:codec . '(submatch(0))'
+    execute "noautocmd keepjumps normal! \<Esc>"
+    normal! ``
+    nohl
+  finally
+    call setpos("'<", l:visual_marks_save[0])
+    call setpos("'>", l:visual_marks_save[1])
+    let &selection = l:sel_save
+  endtry
 endfunction
 
 let s:extpattern = '\v\*\.(\f&[^./])+'
