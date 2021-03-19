@@ -1,5 +1,5 @@
-vim-nvtags: create dynamic tag-based indexes in vim
-Copyright © 2019 Daniel Wennberg
+vim-nvtags: Create dynamic tag-based indexes in vim
+Copyright © 2019-2021 Daniel Wennberg
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the "Software"),

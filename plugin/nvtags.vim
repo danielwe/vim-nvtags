@@ -4,6 +4,11 @@ if !executable('rg')
     finish
 endif
 
+if !exists('*PercentEncode')
+  echoerr '`vim-percent` is not installed.'
+  finish
+endif
+
 " Settings
 function! s:TaglinePattern(prefix, tags)
   if !empty(a:prefix)
@@ -58,7 +63,7 @@ function! s:MarkdownLink(filename, title)
   return '['
         \ . trim(readfile(a:filename, '', 1)[0], '# ')
         \ . ']('
-        \ . NVTagsPercentEncode(a:filename)
+        \ . PercentEncode(a:filename)
         \ . ' "' . a:title . '"'
         \ . ')'
 endfunction
@@ -117,75 +122,3 @@ command! -bang NVTagsAll
       \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsHere<bang>' | normal! ``
 command! NVTagsClearAll
       \ execute 'global/' . g:nvtags_queryline_pattern . '/NVTagsClear' | normal! ``
-
-" Percent encode a URL, i.e., replace characters with percent codes as required. Adapted
-" from http://www.danielbigham.ca/cgi-bin/document.pl?mode=Display&DocumentID=1053
-function! NVTagsPercentEncode(string)
-  return join(map(split(a:string, '\zs'), 's:PercentEncodeCharacter(v:val)'), "")
-endfunction
-
-function! NVTagsPercentDecode(string)
-  return substitute(a:string, '\v\%(\x\x)', '\=printf("%c", "0x" . submatch(1))', 'g')
-endfunction
-
-function! s:PercentEncodeCharacter(char)
-  let l:decimal = char2nr(a:char)
-  if l:decimal >= 45 && l:decimal <= 57  " digits and -./
-    return a:char
-  elseif l:decimal >= 65 && l:decimal <= 90 " uppercase letters
-    return a:char
-  elseif l:decimal >= 97 && l:decimal <= 122 " lowercase letters
-    return a:char
-  elseif l:decimal == 95 || l:decimal == 126 " _~
-    return a:char
-  endif
-  let l:bytes = []
-  for l:i in range(strlen(a:char))
-    call add(l:bytes, printf("%%%02X", char2nr(strpart(a:char, l:i, 1))))
-  endfor
-  return join(l:bytes, "")
-endfunction
-
-" Create operator functions that can be mapped to encode/decode text in a buffer
-function! NVTagsPercentEncodeOp(type="")
-  return s:PercentOp(a:type, "Encode")
-endfunction
-
-function! NVTagsPercentDecodeOp(type="")
-  return s:PercentOp(a:type, "Decode")
-endfunction
-
-function! s:PercentOp(type, codec)
-  if a:type == ""
-    execute "set operatorfunc=NVTagsPercent" . a:codec . "Op"
-    return 'g@'
-  endif
-
-  let l:sel_save = &selection
-  let l:visual_marks_save = [getpos("'<"), getpos("'>")]
-
-  try
-    set selection=inclusive
-    let l:select = {"line": "'[V']", "char": "`[v`]", "block": "`[\<c-v>`]"}
-    normal! m`
-    execute "noautocmd keepjumps normal! \<Esc>" get(l:select, a:type, "")
-    execute 'noautocmd keepjumps %s/\v%V\_.*%V\_./\=NVTagsPercent' . a:codec . '(submatch(0))'
-    execute "noautocmd keepjumps normal! \<Esc>"
-    normal! ``
-    nohl
-  finally
-    call setpos("'<", l:visual_marks_save[0])
-    call setpos("'>", l:visual_marks_save[1])
-    let &selection = l:sel_save
-  endtry
-endfunction
-
-let s:extpattern = '\v\*\.(\f&[^./])+'
-let s:extglobs = join(filter(s:globs, 'v:val =~# s:extpattern'), ",")
-
-augroup nvtags
-  if s:extglobs != ""
-    execute "autocmd! BufRead" s:extglobs
-          \ "setlocal includeexpr=NVTagsPercentDecode(v:fname)"
-  endif
-augroup END
