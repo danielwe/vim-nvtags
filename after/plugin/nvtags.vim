@@ -9,10 +9,10 @@ if exists(':NV') == 2
   endfunction
 
   function! NVBacklinksPattern()
-    return '\[.*\]\([0-9A-Za-z%'
+    return '\[.*\]\(([0-9A-Za-z%'
           \ . g:percent_unreserved_nonalnum
           \ . g:percent_permitted_reserved
-          \ . ']*'
+          \ . ']*/)?'
           \ . s:RustRegexEscape(PercentEncode(expand("%:t")))
           \ . '.*\)'
   endfunction
