@@ -61,13 +61,20 @@ Note that `:NVTagsAll` relies on a very rudimentary and experimental translation
 
 ### Interoperability with `notational-vim-fzf`
 
-If [`notational-fzf-vim`](https://github.com/alok/notational-fzf-vim) is installed, this plugin defines two additional commands for interactive tag searches:
+If [`notational-fzf-vim`](https://github.com/alok/notational-fzf-vim) is installed, this plugin defines four additional commands:
 
-* `:NT[!] <query>`:
-Starts an interactive fzf search over tag lines; like running `:execute 'NV[!]' g:nvtags_tagline_pattern`. The fzf query field will be prefilled with any arguments passed to `:NT` (this only works without the `!`).
+* For interactive tag searches:
+  * `:NT[!] <query>`:
+  Starts an interactive fzf search over tag lines; like running `:execute 'NV[!]' g:nvtags_tagline_pattern`. The fzf query field will be prefilled with any arguments passed to `:NT` (this only works without the `!`).
 
-* `:NTHere`:
-Like `:NT`, but extracts the prefilled fzf query from the current line, like `:NVTagsHere`.
+  * `:NTHere`:
+  Like `:NT`, but extracts the prefilled fzf query from the current line, like `:NVTagsHere`.
+* For finding files that link to or mention the current file:
+  * `NVBacklinks[!]`:
+  Starts an interactive fzf search over lines that contain a markdown link to the current file. Note that this assumes that the name of the current file is unique in the directory trees given in `g:nv_search_paths`, otherwise links to files with the same name in other directories will turn up as false positives (ensuring that the links actually point to the current file isn't worth the logical complexity).
+
+  * `NVMentions[!]`:
+  Starts an interactive fzf search over lines that contain the title of the current file. The title is taken to be the content of the first H1 ATX heading in the file, i.e., the first line starting with `# `.
 
 ## Search result handling
 
