@@ -42,5 +42,5 @@ if exists('g:pandoc#loaded') && g:pandoc#loaded && match(g:pandoc#modules#disabl
     return pandoc#completion#Complete(0, a:base)
   endfunction
 
-  call add(g:nvtags_completers, s:completer_pandoc)
+  call insert(g:nvtags_completers, s:completer_pandoc)
 endif
