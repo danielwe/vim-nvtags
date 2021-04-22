@@ -13,17 +13,16 @@ if exists(':NV') == 2
   endfunction
 
   function! NVBacklinksPattern() abort
-    return '\[.*\]\(([0-9A-Za-z%'
-          \ . g:percent_unreserved_nonalnum
-          \ . g:percent_permitted_reserved
-          \ . ']*/)?'
-          \ . s:RustRegexEscape(PercentEncode(expand("%:t")))
+    return '\[.*?\]\(('
+          \ . percent#encoded_pattern()
+          \ . '*/)?'
+          \ . s:RustRegexEscape(percent#encode(expand("%:t")))
           \ . '.*\)'
   endfunction
 
   function! NVMentionsPattern() abort
     return s:RustRegexEscape(
-          \ NVTagsTrimUID(NVTagsMarkdownTitle(getline(1, '$')))
+          \ NVTagsTrimUID(NVTagsATXFirstH1(getline(1, '$')))
           \ )
   endfunction
 

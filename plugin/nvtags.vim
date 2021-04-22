@@ -4,8 +4,8 @@ if !executable('rg')
     finish
 endif
 
-if !exists('*PercentEncode')
-  echoerr '`vim-percent` is not installed.'
+if !exists('g:percent_loaded') || g:percent_loaded == 0
+  echoerr '`vim-percent` is not installed and loaded. Available at https://github.com/danielwe/vim-percent.'
   finish
 endif
 
@@ -85,7 +85,7 @@ function! s:WikiLink(path, label="") abort
 endfunction
 
 function! s:MarkdownLink(path, label, title="") abort
-  let l:link = '[' . a:label . '](' . PercentEncode(a:path)
+  let l:link = '[' . a:label . '](' . percent#encode(a:path)
   if a:title != ""
     let l:link .= ' "' . a:title . '"'
   endif
@@ -302,7 +302,7 @@ endfunction
 function! s:MDURLEntry(path, refdir) abort
   let l:label = s:LinkLabel(a:path)
   let l:relpath = s:Relpath(a:path, a:refdir)
-  return {'abbr': l:label, 'word': PercentEncode(l:relpath), 'menu': '[mdurl]'}
+  return {'abbr': l:label, 'word': percent#encode(l:relpath), 'menu': '[mdurl]'}
 endfunction
 
 let s:completer_mdlabel = {}
