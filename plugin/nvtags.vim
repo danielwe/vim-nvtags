@@ -54,10 +54,10 @@ let g:nvtags_tagline_pattern = s:TaglinePattern(s:prefix, s:tags)
 let g:nvtags_queryline_pattern = s:QuerylinePattern(s:prefix, s:tags)
 
 " Create dynamic tag-based indexes
-function! NVTagsMarkdownTitle(buflines) abort
-  let l:titleindex = match(a:buflines, '\v^#\ ')
-  if l:titleindex >= 0
-    return trim(a:buflines[l:titleindex][2:])
+function! NVTagsATXFirstH1(buflines) abort
+  let l:index = match(a:buflines, '\v^#\ ')
+  if l:index >= 0
+    return trim(a:buflines[l:index][2:])
   endif
   return ""
 endfunction
@@ -66,31 +66,57 @@ function! NVTagsTrimUID(title) abort
   return trim(substitute(a:title, s:uid_pattern, '', ''))
 endfunction
 
-function! s:MarkdownLink(path, refdir="", title="") abort
-  let l:label = NVTagsTrimUID(NVTagsMarkdownTitle(readfile(a:path, '', 1)))
+function s:LinkLabel(path) abort
+  let l:label = NVTagsATXFirstH1(readfile(a:path, '', 1))
   if l:label == ""
     let l:label = fnamemodify(a:path, ':t:r')
   endif
-  let l:path = a:refdir == "" ? a:path : s:Relpath(a:path, a:refdir)
-  let l:link = '[' . l:label . '](' . PercentEncode(l:path)
+  return NVTagsTrimUID(l:label)
+endfunction
+
+function! s:WikiLink(path, label="") abort
+  let l:path = fnamemodify(a:path, ':r')
+  let l:link = '[[' . l:path
+  if a:label != "" && a:label !=# l:path
+    let l:link .= '|' . a:label
+  endif
+  let l:link .= ']]'
+  return l:link
+endfunction
+
+function! s:MarkdownLink(path, label, title="") abort
+  let l:link = '[' . a:label . '](' . PercentEncode(a:path)
   if a:title != ""
     let l:link .= ' "' . a:title . '"'
   endif
   let l:link .= ')'
-  return [l:label, l:link]
+  return l:link
 endfunction
 
-function! s:MarkdownLinkFromGrep(grepline, refdir) abort
+function! s:LinkFromGrep(grepline, refdir, type) abort
   let l:parts = split(a:grepline, ':')
-  return s:MarkdownLink(l:parts[0], a:refdir, trim(l:parts[-1]))
+  let l:path = l:parts[0]
+  let l:label = s:LinkLabel(l:path)
+  let l:relpath = s:Relpath(l:path, a:refdir)
+  if tolower(a:type) == "wiki"
+    return s:WikiLink(l:relpath, l:label)
+  endif
+  if tolower(a:type) == "markdown"
+    let l:title = trim(l:parts[-1])
+    return s:MarkdownLink(l:relpath, l:label, l:title)
+  endif
+  echoerr "unknown link type: " . a:type
 endfunction
 
-function! s:Relpath(path, refdir) abort
+function! s:Relpath(path, refdir="") abort
+  if a:refdir == ""
+    return a:path
+  endif
   python3 import os, vim
   return py3eval('os.path.relpath(vim.eval("a:path"), vim.eval("a:refdir"))')
 endfunction
 
-function! s:AppendLinks(lnum, greplines, n) abort
+function! s:AppendLinks(lnum, greplines, n, type) abort
   if a:n > 0
     let l:n = a:n
   else
@@ -98,13 +124,10 @@ function! s:AppendLinks(lnum, greplines, n) abort
   endif
   if len(a:greplines) > 0
     let l:refdir = expand('%:p:h')
-    call append(
-          \ a:lnum,
-          \ ['  ']
-          \ + map(
-          \   a:greplines[:l:n], '"* " . s:MarkdownLinkFromGrep(v:val, l:refdir)[1]'
-          \ ),
-          \ )
+    let l:links = map(
+          \  a:greplines[:l:n], '"* " . s:LinkFromGrep(v:val, l:refdir, a:type)'
+          \)
+    call append(a:lnum, ['  '] + l:links)
   endif
 endfunction
 
@@ -130,7 +153,12 @@ command! -bang -nargs=? -range -count NVTags
       \ | endif
       \ | call fzf#run({
       \     'sink*': {
-      \       greplines -> s:AppendLinks(<line1>, greplines, <count> - <line1>)
+      \       greplines -> s:AppendLinks(
+      \         <line1>,
+      \         greplines,
+      \         <count> - <line1>,
+      \         get(g:, 'nvtags_link_type', 'wiki'),
+      \       )
       \     },
       \     'options': ['--exact', '--no-sort', '--filter=<args>'],
       \     'source': join([
@@ -194,32 +222,118 @@ function s:NVTagsComplete(base) abort
   return s:completer.complete(a:base)
 endfunction
 
-let s:completer_mdlink = {}
+let s:completer_wiki = {}
 
-function! s:completer_mdlink.findstart(base) dict abort
+function! s:completer_wiki.findstart(base) dict abort
   let l:line = getline('.')[:col('.') - 2]
-  return match(l:line, '\[\zs[^\[)]\{-}$')
+  return match(l:line, '\[\[\zs[^\[\]\|#]\{-}$')
 endfunction
 
-function! s:completer_mdlink.complete(base) dict abort
+function! s:completer_wiki.complete(base) dict abort
   let l:dirs = NVTagsSearchPaths()
   let l:candidates = globpath(
         \ join(l:dirs, ','), get(g:, 'nvtags_completion_glob', '**/*.md'), 0, 1,
         \ )
 
   let l:refdir = expand('%:p:h')
-  call map(l:candidates, 's:MarkdownLinkEntry(v:val, l:refdir)')
+  call map(l:candidates, 's:WikiEntry(v:val, l:refdir)')
   call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
 
   return l:candidates
 endfunction
 
-function! s:MarkdownLinkEntry(path, refdir) abort
-  let [l:label, l:link] = s:MarkdownLink(a:path, a:refdir)
-  return {'abbr': l:label, 'word': l:link[1:], 'menu': '[nvtags]'}
+function! s:WikiEntry(path, refdir) abort
+  let l:label = s:LinkLabel(a:path)
+  let l:relpath = s:Relpath(a:path, a:refdir)
+  let l:link = s:WikiLink(l:relpath)
+  return {'abbr': l:label, 'word': l:link[2:-3], 'menu': '[wiki]'}
 endfunction
 
-let g:nvtags_completers = [s:completer_mdlink]
+let s:completer_wikilabel = {}
+
+function! s:completer_wikilabel.findstart(base) dict abort
+  let l:line = getline('.')[:col('.') - 2]
+  return match(l:line, '\[\[[^\[\]#|]\{-1,}|\zs[^\[\]#]\{-}$')
+endfunction
+
+function! s:completer_wikilabel.complete(base) dict abort
+  let l:refdir = expand('%:p:h')
+  let l:line = getline('.')[:col('.') - 2]
+  let l:rootstart = match(l:line, '\[\[\zs[^\[\]#|]\{-1,}|[^\[\]#]\{-}$')
+  let l:rootend = len(l:line) - len(a:base) - 2
+  let l:root = l:refdir . '/' . l:line[l:rootstart:l:rootend]
+  let l:candidates = [l:root] + expand(l:root . '.*', 0, 1)
+
+  call filter(l:candidates, 'filereadable(v:val)')
+  call map(l:candidates, 's:WikiLabelEntry(v:val)')
+  call filter(l:candidates, 'match(v:val.word, a:base) >= 0')
+
+  return l:candidates
+endfunction
+
+function! s:WikiLabelEntry(path) abort
+  return {'word': s:LinkLabel(a:path), 'menu': '[wikilabel]'}
+endfunction
+
+let s:completer_mdurl = {}
+
+function! s:completer_mdurl.findstart(base) dict abort
+  let l:line = getline('.')[:col('.') - 2]
+  return match(l:line, '\[[^\]]\{-}\](\zs[^)]\{-}$')
+endfunction
+
+function! s:completer_mdurl.complete(base) dict abort
+  let l:dirs = NVTagsSearchPaths()
+  let l:candidates = globpath(
+        \ join(l:dirs, ','), get(g:, 'nvtags_completion_glob', '**/*.md'), 0, 1,
+        \ )
+
+  let l:refdir = expand('%:p:h')
+  call map(l:candidates, 's:MDURLEntry(v:val, l:refdir)')
+  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
+
+  return l:candidates
+endfunction
+
+function! s:MDURLEntry(path, refdir) abort
+  let l:label = s:LinkLabel(a:path)
+  let l:relpath = s:Relpath(a:path, a:refdir)
+  return {'abbr': l:label, 'word': PercentEncode(l:relpath), 'menu': '[mdurl]'}
+endfunction
+
+let s:completer_mdlabel = {}
+
+function! s:completer_mdlabel.findstart(base) dict abort
+  let l:line = getline('.')[:col('.') - 2]
+  return match(l:line, '\[\zs[^\[)]\{-}$')
+endfunction
+
+function! s:completer_mdlabel.complete(base) dict abort
+  let l:dirs = NVTagsSearchPaths()
+  let l:candidates = globpath(
+        \ join(l:dirs, ','), get(g:, 'nvtags_completion_glob', '**/*.md'), 0, 1,
+        \ )
+
+  let l:refdir = expand('%:p:h')
+  call map(l:candidates, 's:MDLabelEntry(v:val, l:refdir)')
+  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
+
+  return l:candidates
+endfunction
+
+function! s:MDLabelEntry(path, refdir) abort
+  let l:label = s:LinkLabel(a:path)
+  let l:relpath = s:Relpath(a:path, a:refdir)
+  let l:link = s:MarkdownLink(l:relpath, l:label)
+  return {'abbr': l:label, 'word': l:link[1:-2], 'menu': '[mdlabel]'}
+endfunction
+
+let g:nvtags_completers = [
+      \ s:completer_wikilabel,
+      \ s:completer_wikilink,
+      \ s:completer_mdurl,
+      \ s:completer_mdlabel,
+      \]
 
 augroup mdcomplete
   autocmd!

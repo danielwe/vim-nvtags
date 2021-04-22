@@ -63,11 +63,11 @@ Note that `:NVTagsAll` relies on a very rudimentary and experimental translation
 
 ## Search result handling
 
-For now, `:NVTags[Here]` inserts a list of markdown links to the matching files, grabbing the link text from the first H1 ATX heading in the file and percent-encoding the address to obtain a valid URL. The links are sorted in inverse order of last modification time, such that the last modified matching file is listed first. This is not customizable; perhaps the future will bring about more flexibility?
+`:NVTags[Here]` inserts a list of links to the matching files, grabbing the link label from the first H1 ATX heading in the file. The type of link can be customized through the parameter `g:nvtags_link_type`; valid values are `'wiki'` and `'markdown'`, default is `'wiki'`. For wiki links, the label is not added if it is identical to the address and thus redundant. For markdown links, the address is percent-encoded to obtain a valid URL, and the file's tag line is appended as link title (i.e., mouseover text). The links are sorted in inverse order of last modification time, such that the last modified matching file is listed first (sort order is not customizable at the moment).
 
-A Zettelkasten-style UID will be removed from the H1 heading to produce a more readable link text. To customize the UID pattern, set the variable `g:nvtags_uid_pattern` to an appropriate vim regex pattern. The default is `\v(^\d{12,}|\d{12,}$)`, i.e., 12 or more consecutive digits at the beginning or end of the heading.
+A Zettelkasten-style UID will be removed from the H1 heading to produce a less cluttered link label. To customize the UID pattern, set the variable `g:nvtags_uid_pattern` to an appropriate vim regex pattern. The default is `\v(^\d{12,}|\d{12,}$)`, i.e., 12 or more consecutive digits at the beginning or end of the heading.
 
-If no H1 heading is found the link text will be the file name without extension.
+If no H1 heading is found the link label will be the file name without extension.
 
 The command `:NVTagsClear` deletes a previously appended list of links below the given line.
 
@@ -82,11 +82,32 @@ The `:NVTags*` commands start from the working directory and search all files th
 
 ## Completion
 
-The plugin provides an omnifunc for autocompletion of markdown links to markdown files, inspired by [wiki.vim](https:/github.com/lervag/wiki.vim).. The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*.md'`, which matches markdown files at any depth in the folder hierarchies below the search paths.
+The plugin provides an omnifunc for autocompletion of wiki and markdown links, inspired by [wiki.vim](https:/github.com/lervag/wiki.vim). The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*.md'`, which matches markdown files at any depth in the folder hierarchies below the search paths.
 
-The completed text contains a markdown link with link text and URL as explained under [Search result handling](#search-result-handling).
+Currently, the omnifunc has four completion modes, in order of priority:
 
-The omnifunc works well with `[` as autocompletion trigger. For example, if you use <https://github.com/Valloric/YouCompleteMe>, set `let g:ycm_semantic_triggers.{markdown,pandoc} = ['[']`.
+1. `[wikilabel]`: The sole completion alternative following `[[<file path>|<input>` is the link label extracted from the given file, as described under [Search result handling](#search-result-handling).
+2. `[wiki]`: The completion alternatives following `[[<input>` are relative paths to files.
+3. `[mdurl]`: The completion alternatives following `[<label>](<input>` are markdown link URLs to files.
+4. `[mdlabel]`: The completion alternatives following `[<input>` are full markdown links to files, with label and URL as described under [Search result handling](#search-result-handling).
+
+In all cases, the text displayed in the popup menu is the link label as described under [Search result handling](#search-result-handling).
+
+Suggested autocompletion triggers if you use <https://github.com/Valloric/YouCompleteMe>:
+
+```vim
+if !exists('g:ycm_semantic_triggers')
+  let g:ycm_semantic_triggers = {}
+endif
+augroup ycm_triggers
+  autocmd!
+  autocmd! VimEnter *
+        \| let g:ycm_semantic_triggers.pandoc = ['[[', 're!\[\[[^\[\]#]+?\|', 're!\[[^\]]+?\]\(']
+        \| let g:ycm_semantic_triggers.markdown = ['[[', 're!\[\[[^\[\]#]+?\|', 're!\[[^\]]+?\]\(']
+augroup END
+```
+
+Note that this will _not_ trigger completion mode 4, which would arguably be excessively intrusive, and these completion alternatives will often be discarded by the autocompletion engine anyway for being longer than 80 characters. Hit `<c-x><c-o>` to trigger this completion mode manually when desired (or add `'['` to the list of triggers if you really want to).
 
 ## Interoperability with `notational-vim-fzf`
 
@@ -109,7 +130,7 @@ In addition, if the variable `g:nvtags_search_paths` is unset it will be set ide
 
 ## Interoperability with `vim-pandoc`
 
-If [`vim-pandoc`](https://github.com/vim-pandoc/vim-pandoc) is loaded with the completion module enabled, the provided omnifunc integrates with the pandoc omnifunc, so both link and bibliography completion work. Autocompletion triggers should be set accordingly, for example `let g:ycm_semantic_triggers.pandoc = ['[', '@']`.
+If [`vim-pandoc`](https://github.com/vim-pandoc/vim-pandoc) is loaded with the completion module enabled, the provided omnifunc integrates with the pandoc omnifunc, so both link and bibliography completion work. You might want to set autocompletion triggers accordingly, i.e., add `'@'` to `g:ycm_semantic_triggers.pandoc`.
 
 ## Usage tips
 
