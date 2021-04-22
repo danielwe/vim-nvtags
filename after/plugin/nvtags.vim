@@ -35,12 +35,20 @@ if exists('g:pandoc#loaded') && g:pandoc#loaded && match(g:pandoc#modules#disabl
   let s:completer_pandoc = {}
 
   function! s:completer_pandoc.findstart(base) dict abort
-    return pandoc#completion#Complete(1, a:base)
+    try
+      return pandoc#completion#Complete(1, a:base)
+    catch
+      return -1
+    endtry
   endfunction
 
   function! s:completer_pandoc.complete(base) dict abort
-    return pandoc#completion#Complete(0, a:base)
+    try
+      return pandoc#completion#Complete(0, a:base)
+    catch
+      return []
+    endtry
   endfunction
 
-  call insert(g:nvtags_completers, s:completer_pandoc)
+  call add(g:nvtags_completers, s:completer_pandoc)
 endif

@@ -84,14 +84,14 @@ The `:NVTags*` commands start from the working directory and search all files th
 
 The plugin provides an omnifunc for autocompletion of wiki and markdown links, inspired by [wiki.vim](https:/github.com/lervag/wiki.vim). The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*.md'`, which matches markdown files at any depth in the folder hierarchies below the search paths.
 
-Currently, the omnifunc has four completion modes, in order of priority:
+Currently, the omnifunc has four completion modes:
 
-1. `[wikilabel]`: The sole completion alternative following `[[<file path>|<input>` is the link label extracted from the given file, as described under [Search result handling](#search-result-handling).
-2. `[wiki]`: The completion alternatives following `[[<input>` are relative paths to files.
-3. `[mdurl]`: The completion alternatives following `[<label>](<input>` are markdown link URLs to files.
-4. `[mdlabel]`: The completion alternatives following `[<input>` are full markdown links to files, with label and URL as described under [Search result handling](#search-result-handling).
+* `[wiki]`: The completion alternatives following `[[<input>` are relative paths to files.
+* `[wikilabel]`: The sole completion alternative following `[[<file path>|<input>` is the link label extracted from the given file, as described under [Search result handling](#search-result-handling).
+* `[mdurl]`: The completion alternatives following `[<label>](<input>` are markdown link URLs to files.
+* `[mdlabel]`: The completion alternatives following `[<input>` are full markdown links to files, with label and URL as described under [Search result handling](#search-result-handling).
 
-In all cases, the text displayed in the popup menu is the link label as described under [Search result handling](#search-result-handling).
+The selected mode is the one that produces the shortest `<input>` string. In all cases, the text displayed in the popup menu is the link label as described under [Search result handling](#search-result-handling).
 
 Suggested autocompletion triggers if you use <https://github.com/Valloric/YouCompleteMe>:
 
@@ -107,7 +107,7 @@ augroup ycm_triggers
 augroup END
 ```
 
-Note that this will _not_ trigger completion mode 4, which would arguably be excessively intrusive, and these completion alternatives will often be discarded by the autocompletion engine anyway for being longer than 80 characters. Hit `<c-x><c-o>` to trigger this completion mode manually when desired (or add `'['` to the list of triggers if you really want to).
+Note that this will _not_ trigger completion mode 4, which would arguably be excessively intrusive, and these completion alternatives will often be discarded by the autocompletion engine anyway for being longer than 80 characters. Hit `<c-x><c-o>` to trigger this completion mode manually when desired (or add `'['` to the list of triggers if you really want to). (Note that if you're using YouCompleteMe the completion menu will likely just flash and disappear again on the first invocation of `<c-x><c-o>` at any given location; hit `<c-x><c-o>` again to make it stay. An alternative is to trigger YouCompleteMe manually using `<c-space>`, but note that the resulting alternatives will be subject to the 80 character limit.)
 
 ## Interoperability with `notational-vim-fzf`
 

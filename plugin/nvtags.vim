@@ -125,7 +125,7 @@ function! s:AppendLinks(lnum, greplines, n, type) abort
   if len(a:greplines) > 0
     let l:refdir = expand('%:p:h')
     let l:links = map(
-          \  a:greplines[:l:n], '"* " . s:LinkFromGrep(v:val, l:refdir, a:type)'
+          \ a:greplines[:l:n], '"* " . s:LinkFromGrep(v:val, l:refdir, a:type)'
           \)
     call append(a:lnum, ['  '] + l:links)
   endif
@@ -202,17 +202,21 @@ function! s:NVTagsFindstart(base) abort
   if exists('s:completer')
     unlet s:completer
   endif
+  let l:cnum = -1
   for l:completer in g:nvtags_completers
-    let l:cnum = l:completer.findstart(a:base)
-    if l:cnum >= 0
+    let l:this_cnum = l:completer.findstart(a:base)
+    if l:this_cnum > l:cnum
       let s:completer = l:completer
-      return l:cnum
+      let l:cnum = l:this_cnum
     endif
   endfor
 
-  " -2  cancel silently and stay in completion mode.
-  " -3  cancel silently and leave completion mode.
-  return -3
+  if l:cnum < 0
+    " -2  cancel silently and stay in completion mode.
+    " -3  cancel silently and leave completion mode.
+    return -3
+  endif
+  return l:cnum
 endfunction
 
 function s:NVTagsComplete(base) abort
@@ -305,14 +309,14 @@ let s:completer_mdlabel = {}
 
 function! s:completer_mdlabel.findstart(base) dict abort
   let l:line = getline('.')[:col('.') - 2]
-  return match(l:line, '\[\zs[^\[)]\{-}$')
+  return match(l:line, '\(^\|[^\[]\)\[\zs[^\[)]\{-}$')
 endfunction
 
 function! s:completer_mdlabel.complete(base) dict abort
   let l:dirs = NVTagsSearchPaths()
   let l:candidates = globpath(
         \ join(l:dirs, ','), get(g:, 'nvtags_completion_glob', '**/*.md'), 0, 1,
-        \ )
+        \)
 
   let l:refdir = expand('%:p:h')
   call map(l:candidates, 's:MDLabelEntry(v:val, l:refdir)')
@@ -328,12 +332,9 @@ function! s:MDLabelEntry(path, refdir) abort
   return {'abbr': l:label, 'word': l:link[1:-2], 'menu': '[mdlabel]'}
 endfunction
 
-let g:nvtags_completers = [
-      \ s:completer_wikilabel,
-      \ s:completer_wikilink,
-      \ s:completer_mdurl,
-      \ s:completer_mdlabel,
-      \]
+let g:nvtags_completers = map(
+      \ filter(items(s:), 'v:val[0] =~# ''^completer_'''), 'v:val[1]'
+      \)
 
 augroup mdcomplete
   autocmd!
