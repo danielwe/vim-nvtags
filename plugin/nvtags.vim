@@ -22,6 +22,7 @@ let g:nvtags_defaults = {
       \ 'uid_pattern': '\v(^\d{12,}|\d{12,}$)',
       \ 'globs': ['*.md'],
       \ 'search_paths': [],
+      \ 'sort_arg': '--sortr modified',
       \ 'link_type': 'wiki',
       \ 'completion_glob': '**/*.*',
       \ 'label_scan_num_lines': 10,

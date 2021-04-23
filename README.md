@@ -63,7 +63,9 @@ Note that `:NVTagsAll` relies on a very rudimentary and experimental translation
 
 ## Search result handling
 
-`:NVTags[Here]` inserts a list of links to the matching files, grabbing the link label from the first H1 ATX header in the file. The type of link can be customized through the parameter `g:nvtags_link_type`; valid values are `'wiki'` and `'markdown'`, the default is `'wiki'`. For wiki links, the label is not added if it is identical to the filename and thus redundant. For markdown links, the file path is percent-encoded to obtain a valid URL, and the contents of the file's tag line is appended as mouseover text (link "title"). The links are sorted in inverse order of last modification time, such that the last modified matching file is listed first. Sort order is not customizable at the moment.
+`:NVTags[Here]` inserts a list of links to the matching files, grabbing the link label from the first H1 ATX header in the file. The type of link can be customized through the parameter `g:nvtags_link_type`; valid values are `'wiki'` and `'markdown'`, the default is `'wiki'`. For wiki links, the label is not added if it is identical to the filename and thus redundant. For markdown links, the file path is percent-encoded to obtain a valid URL, and the contents of the file's tag line is appended as mouseover text (link "title").
+
+The links are sorted according to the value of `g:nvtags_sort_arg`, which should specify the relevant command line argument to `rg`; the default is `--sortr modified`, which sorts files in inverse order of last modification time, such that the last modified matching file is listed first.
 
 A Zettelkasten-style UID will be removed from the H1 header to produce a less cluttered link label. To customize the UID pattern, set the variable `g:nvtags_uid_pattern` to an appropriate vim regex pattern. The default is `\v(^\d{12,}|\d{12,}$)`, i.e., 12 or more consecutive digits at the beginning or end of the label.
 
