@@ -4,11 +4,13 @@
 "
 
 function! nvtags#after#nv#backlinks_pattern() abort
-  return '\[.*?\]\(('
+  let l:wikipattern = '\[\[.*?' . expand("%:t:r") . '.*?\]\]'
+  let l:mdpattern = '\[.*?\]\(('
         \ . percent#encoded_pattern()
         \ . '*/)?'
         \ . s:escape_rust_pattern(percent#encode(expand("%:t")))
-        \ . '.*\)'
+        \ . '.*?\)'
+  return '(' . l:wikipattern . '|' . l:mdpattern . ')'
 endfunction
 
 function! nvtags#after#nv#mentions_pattern() abort

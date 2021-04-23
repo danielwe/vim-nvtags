@@ -130,7 +130,7 @@ If [`notational-fzf-vim`](https://github.com/alok/notational-fzf-vim) is install
   Like `:NT`, but extracts the prefilled fzf query from the current line, like `:NVTagsHere`.
 * For finding files that link to or mention the current file:
   * `NVBacklinks[!]`:
-  Starts an interactive fzf search over lines that contain a markdown link to the current file. More precisely, matching lines are lines with a link to a file of the same name regardless of path/directory, so false positives can occur if the name of the current file is not unique or there exist links to nonexistent files.
+  Starts an interactive fzf search over lines that contain a link to the current file. More precisely, matching lines are lines with a link to a file of the same name regardless of path/directory, so false positives can occur if the name of the current file is not unique or there exist links to nonexistent files.
 
   * `NVMentions[!]`:
   Starts an interactive fzf search over lines that contain the title of the current file. The title is extracted from the file contents as explained under [Search result handling](#search-result-handling).
