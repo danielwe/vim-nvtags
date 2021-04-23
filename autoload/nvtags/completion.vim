@@ -16,7 +16,7 @@ function! s:findstart(base) abort
     unlet s:completer
   endif
   let l:cnum = -1
-  for l:completer in g:nvtags_completers
+  for l:completer in b:nvtags_completers
     let l:this_cnum = l:completer.findstart(a:base)
     if l:this_cnum > l:cnum
       let s:completer = l:completer
@@ -139,13 +139,9 @@ function! s:completer_mdlabel_entry(path, refdir) abort
   return {'abbr': l:label, 'word': l:link[1:-2], 'menu': '[mdlabel]'}
 endfunction
 
-function! nvtags#completion#init()
-  if !exists('g:nvtags_completers')
-    let g:nvtags_completers = []
-  endif
-  call extend(
-        \ g:nvtags_completers, map(
-        \  filter(items(s:), 'v:val[0] =~# "^completer_"'), 'v:val[1]'
-        \ )
+function! nvtags#completion#init_buffer()
+  let b:nvtags_completers = map(
+        \ filter(items(s:), 'v:val[0] =~# "^completer_"'), 'v:val[1]'
         \)
+  setlocal omnifunc=nvtags#completion#omnicomplete
 endfunction

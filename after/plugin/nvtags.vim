@@ -21,6 +21,11 @@ if exists(':NV') == 2
   command! -bang NVMentions execute 'NV<bang>' nvtags#after#nv#mentions_pattern()
 endif
 
+" pandoc interoperability
 if exists('g:pandoc#loaded') && g:pandoc#loaded && match(g:pandoc#modules#disabled, "completion") == -1
-  call nvtags#after#pandoc#init()
+  let g:nvtags_pandoc_loaded = 1
+  augroup nvtags_pandoc
+    autocmd!
+    autocmd! FileType pandoc call nvtags#after#pandoc#init_buffer()
+  augroup END
 endif

@@ -28,10 +28,9 @@ let g:nvtags_defaults = {
       \ 'label_scan_num_lines': 10,
       \}
 
-" commands for creating dynamic tag-based indexes
+" commands for creating indexes from tag queries
 command! -range -bar NVTagsClear execute "normal! mt"
       \ | execute "<line1>normal! A\<Space>\<Esc>d}`t"
-
 command! -bang -nargs=? -range -count NVTags
     \ if !empty('<bang>') | <line1>NVTagsClear | endif |
     \ call fzf#run({
@@ -66,9 +65,7 @@ command! -bang NVTagsAll
 command! NVTagsClearAll
       \ execute 'global/' . nvtags#patterns#queryline() . '/NVTagsClear' | normal! ``
 
-augroup mdcomplete
+augroup nvtags_complete 
   autocmd!
-  autocmd! FileType markdown,pandoc setlocal omnifunc=nvtags#completion#omnicomplete
+  autocmd! FileType markdown,pandoc call nvtags#completion#init_buffer()
 augroup END
-
-call nvtags#completion#init()

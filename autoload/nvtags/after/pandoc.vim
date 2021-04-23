@@ -3,12 +3,11 @@
 " Maintainer: Daniel Wennberg
 "
 
-function! nvtags#after#pandoc#init()
-  if !exists('g:nvtags_completers')
-    let g:nvtags_completers = []
+function! nvtags#after#pandoc#init_buffer()
+  if !exists('b:nvtags_completers')
+    return
   endif
-  call add(g:nvtags_completers, s:completer_pandoc)
-  let g:nvtags_pandoc_loaded = 1
+  call add(b:nvtags_completers, s:completer_pandoc)
 endfunction
 
 let s:completer_pandoc = {}
