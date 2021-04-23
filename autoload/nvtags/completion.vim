@@ -129,14 +129,14 @@ endfunction
 
 function s:toanchor(header) abort
   let l:anchor = tolower(a:header)
-  let l:anchor = substitute(l:anchor, '\v[^[:ident:]\- ]+', '', 'g')
+  let l:anchor = substitute(l:anchor, '\v[^[:ident:]- ]+', '', 'g')
   let l:anchor = substitute(l:anchor, ' ', '-', 'g')
   return l:anchor
 endfunction
 
 let s:completer_wikianchor = {
-     \ 'pathstartpattern': '\[\[\zs[^\[\]#|]\{-}#[[:ident:]\-]\{-}$',
-     \ 'basestartpattern': '\[\[[^\[\]#|]\{-}#\zs[[:ident:]\-]\{-}$',
+     \ 'pathstartpattern': '\[\[\zs[^\[\]#|]\{-}#[[:ident:]-]\{-}$',
+     \ 'basestartpattern': '\[\[[^\[\]#|]\{-}#\zs[[:ident:]-]\{-}$',
      \}
 
 function! s:completer_wikianchor.findstart(line) dict abort
@@ -165,9 +165,16 @@ endfunction
 let s:_url_pattern = percent#encoded_pattern()
 let s:completer_mdanchor = deepcopy(s:completer_wikianchor)
 let s:completer_mdanchor['pathstartpattern'] =
-      \ '\[[^\]]\{-}\](\zs' . s:_url_pattern . '\{-}#[[:ident:]\-]\{-}$'
+      \ '\[[^\]]\{-}\](\zs' . s:_url_pattern . '\{-}#[[:ident:]-]\{-}$'
 let s:completer_mdanchor['basestartpattern'] =
-      \ '\[[^\]]\{-}\](' . s:_url_pattern . '\{-}#\zs[[:ident:]\-]\{-}$'
+      \ '\[[^\]]\{-}\](' . s:_url_pattern . '\{-}#\zs[[:ident:]-]\{-}$'
+
+function! s:completer_mdanchor.findstart(line) dict abort
+  let l:pathstart = match(a:line, self['pathstartpattern'])
+  let l:basestart = match(a:line, self['basestartpattern'])
+  let self['path'] = percent#decode(a:line[l:pathstart:l:basestart - 2])
+  return l:basestart
+endfunction
 
 " label completion
 let s:completer_wikilabel = {
