@@ -139,11 +139,15 @@ let s:completer_wikianchor = {
      \ 'basestartpattern': '\[\[[^\[\]#|]\{-}#\zs[[:ident:]-]\{-}$',
      \}
 
-function! s:completer_wikianchor.findstart(line) dict abort
+function! s:completer_wikianchor.findstart_core(line) dict abort
   let l:pathstart = match(a:line, self['pathstartpattern'])
   let l:basestart = match(a:line, self['basestartpattern'])
   let self['path'] = a:line[l:pathstart:l:basestart - 2]
   return l:basestart
+endfunction
+
+function! s:completer_wikianchor.findstart(line) dict abort
+  return self.findstart_core(a:line)
 endfunction
 
 function! s:completer_wikianchor.complete(base) dict abort
@@ -170,9 +174,8 @@ let s:completer_mdanchor['basestartpattern'] =
       \ '\[[^\]]\{-}\](' . s:_url_pattern . '\{-}#\zs[[:ident:]-]\{-}$'
 
 function! s:completer_mdanchor.findstart(line) dict abort
-  let l:pathstart = match(a:line, self['pathstartpattern'])
-  let l:basestart = match(a:line, self['basestartpattern'])
-  let self['path'] = percent#decode(a:line[l:pathstart:l:basestart - 2])
+  let l:basestart = self.findstart_core(a:line)
+  let self['path'] = percent#decode(self['path'])
   return l:basestart
 endfunction
 
