@@ -4,7 +4,7 @@
 "
 
 function! nvtags#after#nv#backlinks_pattern() abort
-  let l:wikipattern = '\[\[.*?' . expand("%:t:r") . '.*?\]\]'
+  let l:wikipattern = '\[\[[^\[\]]*' . expand("%:t:r") . '.*?\]\]'
   let l:mdpattern = '\[.*?\]\(('
         \ . percent#encoded_pattern()
         \ . '*/)?'
