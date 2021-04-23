@@ -17,10 +17,11 @@ endif
 let g:nvtags_loaded = 1
 
 let g:nvtags_defaults = {
+      \ 'extensions': ['md', 'mkd', 'markdown'],
       \ 'tagline_prefix': '',
       \ 'tag_pattern': '#\w{2,}(/|\w)*',
       \ 'uid_pattern': '\v(^\d{12,}|\d{12,}$)',
-      \ 'globs': ['*.md'],
+      \ 'globs': ['*.md', '*.mkd', '*.markdown'],
       \ 'search_paths': [],
       \ 'sort_arg': '--sortr modified',
       \ 'link_type': 'wiki',
@@ -65,7 +66,12 @@ command! -bang NVTagsAll
 command! NVTagsClearAll
       \ execute 'global/' . nvtags#patterns#queryline() . '/NVTagsClear' | normal! ``
 
+let g:_nvtags_ftpattern = join(map(copy(nvtags#get('extensions')), '"*." . v:val'), ',')
+
 augroup nvtags_complete 
   autocmd!
-  autocmd! FileType markdown,pandoc call nvtags#completion#init_buffer()
+  if g:_nvtags_ftpattern != ""
+    execute 'autocmd! BufRead,BufNewFile' g:_nvtags_ftpattern
+          \ 'call nvtags#completion#init_buffer()'
+  endif
 augroup END

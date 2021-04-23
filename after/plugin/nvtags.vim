@@ -26,6 +26,9 @@ if exists('g:pandoc#loaded') && g:pandoc#loaded && match(g:pandoc#modules#disabl
   let g:nvtags_pandoc_loaded = 1
   augroup nvtags_pandoc
     autocmd!
-    autocmd! FileType pandoc call nvtags#after#pandoc#init_buffer()
+    if g:_nvtags_ftpattern != ""
+      execute 'autocmd! BufRead,BufNewFile' g:_nvtags_ftpattern
+            \ 'call nvtags#after#pandoc#init_buffer()'
+    endif
   augroup END
 endif

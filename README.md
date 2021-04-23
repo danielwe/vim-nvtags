@@ -77,14 +77,16 @@ The banged commands `:NVTags!`, `NVTagsHere!`, and `:NVTagsAll!` _replace_ any p
 
 ## Filename filtering
 
-The `:NVTags*` commands start from the working directory and search all files that are not hidden or excluded by `.gitignore` and similar files and that matches all glob patterns in the list `g:nvtags_globs`. The default is `['*.md']`, only including markdown files with the most common extension. Some possibilities are:
+The `:NVTags*` commands start from the working directory and search all files that are not hidden or excluded by `.gitignore` and similar files and that matches all glob patterns in the list `g:nvtags_globs`. The default is `['*.md', '*.mkd, '*.markdown']`, matching the most common markdown extensions. Some possibilities are:
 
-* `let g:nvtags_globs = ['*.md', '*.mkd', '*.markdown']`: Include any markdown extension.
+* `let g:nvtags_globs = ['*.md']`: Only include the most common markdown extension.
 * `let g:nvtags_globs = ['!*.html', '!templates/*']`: Exclude HTML files and files in the `templates` folder.
 
 ## Completion
 
-The plugin provides an omnifunc for autocompletion of wiki and markdown links, inspired by [wiki.vim](https:/github.com/lervag/wiki.vim) but with slightly different functionality, including [integrating pandoc bibliography completion](#interoperability-with-vim-pandoc) if enabled.
+The plugin provides an omnifunc for autocompletion of wiki and markdown links, inspired by [wiki.vim](https:/github.com/lervag/wiki.vim) but with somewhat different functionality, including [integrating pandoc bibliography completion](#interoperability-with-vim-pandoc) if available.
+
+The omnifunc is enabled for files with extensions in `g:nvtags_extensions`; the default is `['md', 'mkd', 'markdown']`. Make sure to load this plugin after `pandoc` and `wiki.vim` in order for this omnifunc to take precedence.
 
 The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*.*'`, which matches any file at any depth in the folder hierarchies below the search paths (the rationale for not restricting to `.md` files by default is to enable completing markdown image links).
 

@@ -4,7 +4,7 @@
 "
 
 function! nvtags#after#pandoc#init_buffer()
-  if !exists('b:nvtags_completers')
+  if !exists('b:nvtags_completers') || &filetype != 'pandoc'
     return
   endif
   call add(b:nvtags_completers, s:completer_pandoc)
