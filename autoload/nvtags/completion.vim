@@ -15,9 +15,10 @@ function! s:findstart(base) abort
   if exists('s:completer')
     unlet s:completer
   endif
+  let l:line = getline('.')[:col('.') - 2]
   let l:cnum = -1
   for l:completer in b:nvtags_completers
-    let l:this_cnum = l:completer.findstart(a:base)
+    let l:this_cnum = l:completer.findstart(l:line)
     if l:this_cnum > l:cnum
       let s:completer = l:completer
       let l:cnum = l:this_cnum
@@ -39,179 +40,66 @@ function s:complete(base) abort
   return s:completer.complete(a:base)
 endfunction
 
-let s:completer_wiki = {}
+" link completion
+function! s:candidates() abort
+  let l:dirs = nvtags#search_paths()
+  let l:files = globpath(join(l:dirs, ','), nvtags#get('completion_glob'), 0, 1)
+  call filter(l:files, 'filereadable(v:val)')
+  return l:files
+endfunction
 
-function! s:completer_wiki.findstart(base) dict abort
-  let l:line = getline('.')[:col('.') - 2]
-  return match(l:line, '\[\[\zs[^\[\]\|#]\{-}$')
+function! s:link_parts(path, refdir) abort
+  return [nvtags#link#relpath(a:path, a:refdir), nvtags#link#label(a:path)]
+endfunction
+
+let s:completer_wiki = {'startpattern': '\[\[\zs[^\[\]\|#]\{-}$'}
+
+function! s:completer_wiki.findstart(line) dict abort
+  return match(a:line, self['startpattern'])
 endfunction
 
 function! s:completer_wiki.complete(base) dict abort
   let l:refdir = expand('%:p:h')
-  let l:dirs = nvtags#search_paths()
-  let l:candidates = globpath(join(l:dirs, ','), nvtags#get('completion_glob'), 0, 1)
-
-  call filter(l:candidates, 'filereadable(v:val)')
-  call map(l:candidates, 's:completer_wiki_entry(v:val, l:refdir)')
+  let l:candidates = s:candidates()
+  call map(l:candidates, 's:link_parts(v:val, l:refdir)')
+  call map(l:candidates, 'self.entry(v:val[0], v:val[1])')
   call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
-
   return l:candidates
 endfunction
 
-function! s:completer_wiki_entry(path, refdir) abort
-  let l:label = nvtags#link#label(a:path)
-  let l:relpath = nvtags#link#relpath(a:path, a:refdir)
-  let l:link = nvtags#link#wiki(l:relpath)
-  return {'abbr': l:label, 'word': l:link[2:-3], 'menu': '[wiki]'}
+function! s:completer_wiki.entry(relpath, label) dict abort
+  return {'abbr': a:label, 'word': nvtags#link#wiki(a:relpath)[2:-3], 'menu': '[wiki]'}
 endfunction
 
-let s:completer_wikilabel = {}
+let s:completer_mdurl = deepcopy(s:completer_wiki)
+let s:completer_mdurl['startpattern'] = '\[[^\]]\{-}\](\zs[^)]\{-}$'
 
-function! s:completer_wikilabel.findstart(base) dict abort
-  let l:line = getline('.')[:col('.') - 2]
-  let l:pathstart = match(l:line, '\[\[\zs[^\[\]#|]\{-1,}|[^\]]\{-}$')
-  let l:labelstart = match(l:line, '\[\[[^\[\]#|]\{-1,}|\zs[^\]]\{-}$')
-  let self['path'] = l:line[l:pathstart:l:labelstart - 2]
-  return l:labelstart
+function! s:completer_mdurl.entry(relpath, label) dict abort
+  return {'abbr': a:label, 'word': percent#encode(a:relpath), 'menu': '[mdurl]'}
 endfunction
 
-function! s:completer_wikilabel.complete(base) dict abort
+let s:completer_mdlabel = deepcopy(s:completer_mdurl)
+let s:completer_mdlabel['startpattern'] = '\(^\|[^\[]\)\[\zs[^\[)]\{-}$'
+
+function! s:completer_mdlabel.entry(relpath, label) dict abort
+  let l:link = nvtags#link#markdown(a:relpath, a:label)
+  return {'abbr': a:label, 'word': l:link[1:-2], 'menu': '[mdlabel]'}
+endfunction
+
+" anchor completion
+function! s:path_candidates(path) abort
   let l:refdir = expand('%:p:h')
-  let l:path = l:refdir . '/' . self['path']
-  let l:candidates = [l:path] + expand(l:path . '.*', 0, 1)
-
-  call filter(l:candidates, 'filereadable(v:val)')
-  call map(l:candidates, 's:completer_wikilabel_entry(v:val)')
-  call filter(l:candidates, 'match(v:val.word, a:base) >= 0')
-
-  return l:candidates
-endfunction
-
-function! s:completer_wikilabel_entry(path) abort
-  return {'word': nvtags#link#label(a:path), 'menu': '[wikilabel]'}
-endfunction
-
-let s:completer_mdurl = {}
-
-function! s:completer_mdurl.findstart(base) dict abort
-  let l:line = getline('.')[:col('.') - 2]
-  return match(l:line, '\[[^\]]\{-}\](\zs[^)]\{-}$')
-endfunction
-
-function! s:completer_mdurl.complete(base) dict abort
-  let l:refdir = expand('%:p:h')
-  let l:dirs = nvtags#search_paths()
-  let l:candidates = globpath(join(l:dirs, ','), nvtags#get('completion_glob'), 0, 1)
-
-  call filter(l:candidates, 'filereadable(v:val)')
-  call map(l:candidates, 's:completer_mdurl_entry(v:val, l:refdir)')
-  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
-
-  return l:candidates
-endfunction
-
-function! s:completer_mdurl_entry(path, refdir) abort
-  let l:label = nvtags#link#label(a:path)
-  let l:relpath = nvtags#link#relpath(a:path, a:refdir)
-  return {'abbr': l:label, 'word': percent#encode(l:relpath), 'menu': '[mdurl]'}
-endfunction
-
-let s:completer_mdlabel = {}
-
-function! s:completer_mdlabel.findstart(base) dict abort
-  let l:line = getline('.')[:col('.') - 2]
-  return match(l:line, '\(^\|[^\[]\)\[\zs[^\[)]\{-}$')
-endfunction
-
-function! s:completer_mdlabel.complete(base) dict abort
-  let l:refdir = expand('%:p:h')
-  let l:dirs = nvtags#search_paths()
-  let l:candidates = globpath(join(l:dirs, ','), nvtags#get('completion_glob'), 0, 1)
-
-  call filter(l:candidates, 'filereadable(v:val)')
-  call map(l:candidates, 's:completer_mdlabel_entry(v:val, l:refdir)')
-  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
-
-  return l:candidates
-endfunction
-
-function! s:completer_mdlabel_entry(path, refdir) abort
-  let l:label = nvtags#link#label(a:path)
-  let l:relpath = nvtags#link#relpath(a:path, a:refdir)
-  let l:link = nvtags#link#markdown(l:relpath, l:label)
-  return {'abbr': l:label, 'word': l:link[1:-2], 'menu': '[mdlabel]'}
-endfunction
-
-let s:completer_wikianchor = {}
-
-function! s:completer_wikianchor.findstart(base) dict abort
-  let l:line = getline('.')[:col('.') - 2]
-  let l:pathstart = match(l:line, '\[\[\zs[^\[\]#|]\{-}#[[:ident:]\-]\{-}$')
-  let l:anchorstart = match(l:line, '\[\[[^\[\]#|]\{-}#\zs[[:ident:]\-]\{-}$')
-  let self['path'] = l:line[l:pathstart:l:anchorstart - 2]
-  return l:anchorstart
-endfunction
-
-function! s:completer_wikianchor.complete(base) dict abort
-  if self['path'] == ""
+  if a:path == ""
     let l:files = [expand('%')]
   else
-    let l:refdir = expand('%:p:h')
-    let l:path = l:refdir . '/' . self['path']
+    let l:path = l:refdir . '/' . a:path
     let l:files = [l:path] + expand(l:path . '.*', 0, 1)
   endif
-
   call filter(l:files, 'filereadable(v:val)')
-  let l:candidates = []
-  for l:file in l:files
-    call extend(l:candidates, s:completer_anchor_entries(l:file))
-  endfor
-  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
-
-  return l:candidates
+  return l:files
 endfunction
 
-let s:completer_mdanchor = {}
-
-function! s:completer_mdanchor.findstart(base) dict abort
-  let l:line = getline('.')[:col('.') - 2]
-  let l:urlpat = percent#encoded_pattern()
-  let l:pathstart = match(
-        \ l:line, '\[[^\]]\{-}\](\zs' . l:urlpat . '\{-}#[[:ident:]\-]\{-}$'
-        \)
-  let l:anchorstart = match(
-        \ l:line, '\[[^\]]\{-}\](' . l:urlpat . '\{-}#\zs[[:ident:]\-]\{-}$'
-        \)
-  let self['path'] = percent#decode(l:line[l:pathstart:l:anchorstart - 2])
-  return l:anchorstart
-endfunction
-
-function! s:completer_mdanchor.complete(base) dict abort
-  if self['path'] == ""
-    let l:path = expand('%')
-  else
-    let l:refdir = expand('%:p:h')
-    let l:path = l:refdir . '/' . self['path']
-  endif
-  if !filereadable(l:path)
-    return []
-  endif
-
-  let l:candidates = s:completer_anchor_entries(l:path)
-  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
-
-  return l:candidates
-endfunction
-
-function! s:completer_anchor_entries(path) abort
-  let l:entries = []
-  for [l:header, l:anchor] in s:get_anchors(a:path)
-    call add(l:entries, {'abbr': l:header, 'word': l:anchor, 'menu': '[anchor]'})
-  endfor
-  return l:entries
-endfunction
-
-let s:atx_pattern = '\v^#{1,6} '
+let s:_atx_pattern = '\v^#{1,6} '
 
 function s:get_anchors(file) abort
   let l:anchors = []
@@ -223,9 +111,9 @@ function s:get_anchors(file) abort
       let l:preblock += 1
     endif
     if l:preblock % 2 | continue | endif
-    
-    if l:line =~# s:atx_pattern 
-      let l:header = trim(substitute(l:line, s:atx_pattern, '', ''))
+
+    if l:line =~# s:_atx_pattern 
+      let l:header = trim(substitute(l:line, s:_atx_pattern, '', ''))
       let l:anchor = s:toanchor(l:header)
       if exists('l:counts["' . l:anchor . '"]')
         let l:anchor .= "-" . l:counts[l:anchor]
@@ -233,7 +121,7 @@ function s:get_anchors(file) abort
       else
         let l:counts[l:anchor] = 1
       end
-      call add(l:anchors, [l:header, l:anchor])
+      call add(l:anchors, [l:anchor, l:header])
     endif
   endfor
   return l:anchors
@@ -244,6 +132,86 @@ function s:toanchor(header) abort
   let l:anchor = substitute(l:anchor, '\v[^[:ident:]\- ]+', '', 'g')
   let l:anchor = substitute(l:anchor, ' ', '-', 'g')
   return l:anchor
+endfunction
+
+let s:completer_wikianchor = {
+     \ 'pathstartpattern': '\[\[\zs[^\[\]#|]\{-}#[[:ident:]\-]\{-}$',
+     \ 'basestartpattern': '\[\[[^\[\]#|]\{-}#\zs[[:ident:]\-]\{-}$',
+     \}
+
+function! s:completer_wikianchor.findstart(line) dict abort
+  let l:pathstart = match(a:line, self['pathstartpattern'])
+  let l:basestart = match(a:line, self['basestartpattern'])
+  let self['path'] = a:line[l:pathstart:l:basestart - 2]
+  return l:basestart
+endfunction
+
+function! s:completer_wikianchor.complete(base) dict abort
+  let l:files = s:path_candidates(self['path'])
+
+  let l:candidates = []
+  for l:file in l:files
+    call extend(l:candidates, s:get_anchors(l:file))
+  endfor
+  call map(l:candidates, 'self.entry(v:val[0], v:val[1])')
+  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
+  return l:candidates
+endfunction
+
+function! s:completer_wikianchor.entry(anchor, header) dict abort
+  return {'abbr': a:header, 'word': a:anchor, 'menu': '[anchor]'}
+endfunction
+
+let s:_url_pattern = percent#encoded_pattern()
+let s:completer_mdanchor = deepcopy(s:completer_wikianchor)
+let s:completer_mdanchor['pathstartpattern'] =
+      \ '\[[^\]]\{-}\](\zs' . s:_url_pattern . '\{-}#[[:ident:]\-]\{-}$'
+let s:completer_mdanchor['basestartpattern'] =
+      \ '\[[^\]]\{-}\](' . s:_url_pattern . '\{-}#\zs[[:ident:]\-]\{-}$'
+
+" label completion
+let s:completer_wikilabel = {
+      \ 'pathstartpattern': '\[\[\zs[^\[\]|]\{-1,}|[^\]]\{-}$',
+      \ 'basestartpattern': '\[\[[^\[\]|]\{-1,}|\zs[^\]]\{-}$',
+      \}
+
+function! s:completer_wikilabel.findstart(line) dict abort
+  let l:pathstart = match(a:line, self['pathstartpattern'])
+  let l:basestart = match(a:line, self['basestartpattern'])
+  let self['path'] = a:line[l:pathstart:l:basestart - 2]
+  if self['path'] =~# '#'
+    let l:anchstart = s:completer_wikianchor.findstart(a:line[:l:basestart - 2])
+    let self['anchpath'] = s:completer_wikianchor['path']
+    let self['anchor'] = a:line[l:anchstart:l:basestart - 2]
+  endif
+  return l:basestart
+endfunction
+
+function! s:completer_wikilabel.complete(base) dict abort
+  let l:candidates = s:path_candidates(self['path'])
+  call map(l:candidates, 's:completer_wikilabel.entry(v:val)')
+
+  if self['path'] =~# '#'
+    let l:files = s:path_candidates(self['anchpath'])
+    let l:anchcandidates = []
+    for l:file in l:files
+      call extend(l:anchcandidates, s:get_anchors(l:file))
+    endfor
+    call filter(l:anchcandidates, 'v:val[0] == self["anchor"]')
+    call map(l:anchcandidates, 'self.anchentry(v:val[1])')
+    call extend(l:candidates, l:anchcandidates)
+  endif
+
+  call filter(l:candidates, 'match(v:val.word, a:base) >= 0')
+  return l:candidates
+endfunction
+
+function! s:completer_wikilabel.entry(path) dict abort
+  return {'word': nvtags#link#label(a:path), 'menu': '[wikilabel]'}
+endfunction
+
+function! s:completer_wikilabel.anchentry(header) dict abort
+  return {'word': a:header, 'menu': '[wikilabel]'}
 endfunction
 
 function! nvtags#completion#init_buffer()

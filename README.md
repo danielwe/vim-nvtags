@@ -93,10 +93,10 @@ The omnifunc looks for files in the same directories as `NVTags` et al., see [Qu
 Currently, the omnifunc has five completion modes:
 
 * `[wiki]`: The completion alternatives following `[[<input>` are relative paths to files.
-* `[wikilabel]`: The sole completion alternative following `[[<file path>|<input>` is the link label extracted from the given file, as described under [Search result handling](#search-result-handling).
 * `[mdurl]`: The completion alternatives following `[<label>](<input>` are markdown link URLs to files.
 * `[mdlabel]`: The completion alternatives following `[<input>` are full markdown links to files, with label and URL as described under [Search result handling](#search-result-handling).
 * `[anchor]`: The completion alternatives following `[[<file path>#<input>` and `[<label>](<file path>#<input>` are anchors to headers in the given file. An attempt is made to approximate as closely as possible the mapping of headers to anchors used in common markdown renderers such as github.
+* `[wikilabel]`: The sole completion alternative following `[[<file path>|<input>` is the link label extracted from the given file, as described under [Search result handling](#search-result-handling). Similarly, the completion alternative following `[[<file_path>#<anchor>|<input>` is the contents of the header that the anchor points to.
 
 The selected mode is the one that produces the shortest `<input>` string. In all cases, the text displayed in the popup menu is the link label as described under [Search result handling](#search-result-handling), or the relevant header in the case of anchor completion.
 
