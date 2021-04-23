@@ -90,14 +90,15 @@ The omnifunc is enabled for files with extensions in `g:nvtags_extensions`; the 
 
 The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*'`, which matches any file with extension at any depth in the folder hierarchies below the search paths (the rationale for not restricting to a markdown extension by default is to enable completing markdown image links).
 
-Currently, the omnifunc has four completion modes:
+Currently, the omnifunc has five completion modes:
 
 * `[wiki]`: The completion alternatives following `[[<input>` are relative paths to files.
 * `[wikilabel]`: The sole completion alternative following `[[<file path>|<input>` is the link label extracted from the given file, as described under [Search result handling](#search-result-handling).
 * `[mdurl]`: The completion alternatives following `[<label>](<input>` are markdown link URLs to files.
 * `[mdlabel]`: The completion alternatives following `[<input>` are full markdown links to files, with label and URL as described under [Search result handling](#search-result-handling).
+* `[anchor]`: The completion alternatives following `[[<file path>#<input>` and `[<label>](<file path>#<input>` are anchors to headers in the given file. An attempt is made to approximate as closely as possible the mapping of headers to anchors used in common markdown renderers such as github.
 
-The selected mode is the one that produces the shortest `<input>` string. In all cases, the text displayed in the popup menu is the link label as described under [Search result handling](#search-result-handling).
+The selected mode is the one that produces the shortest `<input>` string. In all cases, the text displayed in the popup menu is the link label as described under [Search result handling](#search-result-handling), or the relevant header in the case of anchor completion.
 
 Suggested triggers for supported autocompletion engines can be obtained through functions under the `nvtags#triggers` namespace. The only supported engine at the moment is <https://github.com/Valloric/YouCompleteMe>. To use these triggers, add the following to your `.vimrc`:
 
@@ -115,7 +116,7 @@ augroup END
 
 The filename argument is optional but allows the triggers to be adapted as appropriate for integrated third-party omnifuncs. Specifically, this will add `@` as a trigger for the `pandoc` filetype if pandoc bibliography completion is loaded and [integrated](#interoperability-with-vim-pandoc).
 
-Note that the suggested will _not_ trigger completion mode 4; autotriggering of this mode is arguably too intrusive, and these completion alternatives will often be discarded by the autocompletion engine anyway for being longer than 80 characters. Hit `<c-x><c-o>` to trigger this completion mode manually when desired (or manually add `'['` to the list of triggers if you really want to: `nvtags#triggers#ycm() + ['[']`). (Note that if you're using YouCompleteMe the completion menu will likely just flash and disappear on the first invocation of `<c-x><c-o>` at a given location; hit `<c-x><c-o>` again to make it stay. An alternative is to trigger YouCompleteMe manually using `<c-space>`, but note that the results will then be subject to the 80 character limit.)
+Note that the suggested will _not_ trigger the `[mdlabel]` completion mode; autotriggering this is arguably too intrusive, and these completion alternatives will often be discarded by the autocompletion engine anyway for being longer than 80 characters. Hit `<c-x><c-o>` to trigger this completion mode manually when desired (or manually add `'['` to the list of triggers if you really want to: `nvtags#triggers#ycm() + ['[']`). (Note that if you're using YouCompleteMe the completion menu will likely flash and disappear on the first invocation of `<c-x><c-o>` at a given location; hit `<c-x><c-o>` again to make it stay. An alternative is to trigger YouCompleteMe manually using `<c-space>`, but note that the results will then be subject to the 80 character limit.)
 
 ## Interoperability with `notational-vim-fzf`
 

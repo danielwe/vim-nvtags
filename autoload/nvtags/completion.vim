@@ -69,8 +69,8 @@ let s:completer_wikilabel = {}
 
 function! s:completer_wikilabel.findstart(base) dict abort
   let l:line = getline('.')[:col('.') - 2]
-  let l:pathstart = match(l:line, '\[\[\zs[^\[\]#|]\{-1,}|[^\[\]#]\{-}$')
-  let l:labelstart = match(l:line, '\[\[[^\[\]#|]\{-1,}|\zs[^\[\]#]\{-}$')
+  let l:pathstart = match(l:line, '\[\[\zs[^\[\]#|]\{-1,}|[^\]]\{-}$')
+  let l:labelstart = match(l:line, '\[\[[^\[\]#|]\{-1,}|\zs[^\]]\{-}$')
   let self['path'] = l:line[l:pathstart:l:labelstart - 2]
   return l:labelstart
 endfunction
@@ -140,6 +140,110 @@ function! s:completer_mdlabel_entry(path, refdir) abort
   let l:relpath = nvtags#link#relpath(a:path, a:refdir)
   let l:link = nvtags#link#markdown(l:relpath, l:label)
   return {'abbr': l:label, 'word': l:link[1:-2], 'menu': '[mdlabel]'}
+endfunction
+
+let s:completer_wikianchor = {}
+
+function! s:completer_wikianchor.findstart(base) dict abort
+  let l:line = getline('.')[:col('.') - 2]
+  let l:pathstart = match(l:line, '\[\[\zs[^\[\]#|]\{-}#[[:ident:]\-]\{-}$')
+  let l:anchorstart = match(l:line, '\[\[[^\[\]#|]\{-}#\zs[[:ident:]\-]\{-}$')
+  let self['path'] = l:line[l:pathstart:l:anchorstart - 2]
+  return l:anchorstart
+endfunction
+
+function! s:completer_wikianchor.complete(base) dict abort
+  if self['path'] == ""
+    let l:files = [expand('%')]
+  else
+    let l:refdir = expand('%:p:h')
+    let l:path = l:refdir . '/' . self['path']
+    let l:files = [l:path] + expand(l:path . '.*', 0, 1)
+  endif
+
+  call filter(l:files, 'filereadable(v:val)')
+  let l:candidates = []
+  for l:file in l:files
+    call extend(l:candidates, s:completer_anchor_entries(l:file))
+  endfor
+  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
+
+  return l:candidates
+endfunction
+
+let s:completer_mdanchor = {}
+
+function! s:completer_mdanchor.findstart(base) dict abort
+  let l:line = getline('.')[:col('.') - 2]
+  let l:urlpat = percent#encoded_pattern()
+  let l:pathstart = match(
+        \ l:line, '\[[^\]]\{-}\](\zs' . l:urlpat . '\{-}#[[:ident:]\-]\{-}$'
+        \)
+  let l:anchorstart = match(
+        \ l:line, '\[[^\]]\{-}\](' . l:urlpat . '\{-}#\zs[[:ident:]\-]\{-}$'
+        \)
+  let self['path'] = percent#decode(l:line[l:pathstart:l:anchorstart - 2])
+  return l:anchorstart
+endfunction
+
+function! s:completer_mdanchor.complete(base) dict abort
+  if self['path'] == ""
+    let l:path = expand('%')
+  else
+    let l:refdir = expand('%:p:h')
+    let l:path = l:refdir . '/' . self['path']
+  endif
+  if !filereadable(l:path)
+    return []
+  endif
+
+  let l:candidates = s:completer_anchor_entries(l:path)
+  call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
+
+  return l:candidates
+endfunction
+
+function! s:completer_anchor_entries(path) abort
+  let l:entries = []
+  for [l:header, l:anchor] in s:get_anchors(a:path)
+    call add(l:entries, {'abbr': l:header, 'word': l:anchor, 'menu': '[anchor]'})
+  endfor
+  return l:entries
+endfunction
+
+let s:atx_pattern = '\v^#{1,6} '
+
+function s:get_anchors(file) abort
+  let l:anchors = []
+  let l:counts = {}
+  let l:preblock = 0
+  for l:line in readfile(a:file)
+    " Ignore fenced code blocks
+    if l:line =~# '^\s*```'
+      let l:preblock += 1
+    endif
+    if l:preblock % 2 | continue | endif
+    
+    if l:line =~# s:atx_pattern 
+      let l:header = trim(substitute(l:line, s:atx_pattern, '', ''))
+      let l:anchor = s:toanchor(l:header)
+      if exists('l:counts["' . l:anchor . '"]')
+        let l:anchor .= "-" . l:counts[l:anchor]
+        let l:counts[l:anchor] += 1
+      else
+        let l:counts[l:anchor] = 1
+      end
+      call add(l:anchors, [l:header, l:anchor])
+    endif
+  endfor
+  return l:anchors
+endfunction
+
+function s:toanchor(header) abort
+  let l:anchor = tolower(a:header)
+  let l:anchor = substitute(l:anchor, '\v[^[:ident:]\- ]+', '', 'g')
+  let l:anchor = substitute(l:anchor, ' ', '-', 'g')
+  return l:anchor
 endfunction
 
 function! nvtags#completion#init_buffer()
