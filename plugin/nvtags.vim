@@ -25,7 +25,7 @@ let g:nvtags_defaults = {
       \ 'search_paths': [],
       \ 'sort_arg': '--sortr modified',
       \ 'link_type': 'wiki',
-      \ 'completion_glob': '**/*.*',
+      \ 'completion_glob': '**/*',
       \ 'label_scan_num_lines': 10,
       \}
 

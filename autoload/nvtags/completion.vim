@@ -47,10 +47,11 @@ function! s:completer_wiki.findstart(base) dict abort
 endfunction
 
 function! s:completer_wiki.complete(base) dict abort
+  let l:refdir = expand('%:p:h')
   let l:dirs = nvtags#search_paths()
   let l:candidates = globpath(join(l:dirs, ','), nvtags#get('completion_glob'), 0, 1)
 
-  let l:refdir = expand('%:p:h')
+  call filter(l:candidates, 'filereadable(v:val)')
   call map(l:candidates, 's:completer_wiki_entry(v:val, l:refdir)')
   call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
 
@@ -68,16 +69,16 @@ let s:completer_wikilabel = {}
 
 function! s:completer_wikilabel.findstart(base) dict abort
   let l:line = getline('.')[:col('.') - 2]
-  return match(l:line, '\[\[[^\[\]#|]\{-1,}|\zs[^\[\]#]\{-}$')
+  let l:pathstart = match(l:line, '\[\[\zs[^\[\]#|]\{-1,}|[^\[\]#]\{-}$')
+  let l:labelstart = match(l:line, '\[\[[^\[\]#|]\{-1,}|\zs[^\[\]#]\{-}$')
+  let self['path'] = l:line[l:pathstart:l:labelstart - 2]
+  return l:labelstart
 endfunction
 
 function! s:completer_wikilabel.complete(base) dict abort
   let l:refdir = expand('%:p:h')
-  let l:line = getline('.')[:col('.') - 2]
-  let l:rootstart = match(l:line, '\[\[\zs[^\[\]#|]\{-1,}|[^\[\]#]\{-}$')
-  let l:rootend = len(l:line) - len(a:base) - 2
-  let l:root = l:refdir . '/' . l:line[l:rootstart:l:rootend]
-  let l:candidates = [l:root] + expand(l:root . '.*', 0, 1)
+  let l:path = l:refdir . '/' . self['path']
+  let l:candidates = [l:path] + expand(l:path . '.*', 0, 1)
 
   call filter(l:candidates, 'filereadable(v:val)')
   call map(l:candidates, 's:completer_wikilabel_entry(v:val)')
@@ -98,10 +99,11 @@ function! s:completer_mdurl.findstart(base) dict abort
 endfunction
 
 function! s:completer_mdurl.complete(base) dict abort
+  let l:refdir = expand('%:p:h')
   let l:dirs = nvtags#search_paths()
   let l:candidates = globpath(join(l:dirs, ','), nvtags#get('completion_glob'), 0, 1)
 
-  let l:refdir = expand('%:p:h')
+  call filter(l:candidates, 'filereadable(v:val)')
   call map(l:candidates, 's:completer_mdurl_entry(v:val, l:refdir)')
   call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
 
@@ -122,10 +124,11 @@ function! s:completer_mdlabel.findstart(base) dict abort
 endfunction
 
 function! s:completer_mdlabel.complete(base) dict abort
+  let l:refdir = expand('%:p:h')
   let l:dirs = nvtags#search_paths()
   let l:candidates = globpath(join(l:dirs, ','), nvtags#get('completion_glob'), 0, 1)
 
-  let l:refdir = expand('%:p:h')
+  call filter(l:candidates, 'filereadable(v:val)')
   call map(l:candidates, 's:completer_mdlabel_entry(v:val, l:refdir)')
   call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
 

@@ -88,7 +88,7 @@ The plugin provides an omnifunc for autocompletion of wiki and markdown links, i
 
 The omnifunc is enabled for files with extensions in `g:nvtags_extensions`; the default is `['md', 'mkd', 'markdown']`. Make sure to load this plugin after `pandoc` and `wiki.vim` in order for this omnifunc to take precedence.
 
-The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*.*'`, which matches any file at any depth in the folder hierarchies below the search paths (the rationale for not restricting to `.md` files by default is to enable completing markdown image links).
+The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*'`, which matches any file with extension at any depth in the folder hierarchies below the search paths (the rationale for not restricting to a markdown extension by default is to enable completing markdown image links).
 
 Currently, the omnifunc has four completion modes:
 
