@@ -1,53 +1,26 @@
+" Miscellaneous document tagging and wiki linking functionality
+"
+" Maintainer: Daniel Wennberg
+"
+
+if !exists('g:nvtags_loaded') || g:nvtags_loaded == 0
+  finish
+endif
+
 " notational-vim-fzf interoperability
 if exists(':NV') == 2
   if !exists('g:nvtags_search_paths')
     let g:nvtags_search_paths = g:nv_search_paths
   end
 
-  command! -bang -nargs=? NT execute 'NV<bang>' g:nvtags_tagline_pattern
+  command! -bang -nargs=? NT execute 'NV<bang>' nvtags#patterns#tagline()
         \ | if empty(<q-bang>) | call feedkeys(<q-args>) | endif
-  command! NTHere execute 'NT' NVTagsGetQuery(getline('.'))
+  command! NTHere execute 'NT' nvtags#query(getline('.'))
 
-  function! s:RustRegexEscape(str) abort
-    return escape(a:str, '\.+*?()|[]{}^$')
-  endfunction
-
-  function! NVBacklinksPattern() abort
-    return '\[.*?\]\(('
-          \ . percent#encoded_pattern()
-          \ . '*/)?'
-          \ . s:RustRegexEscape(percent#encode(expand("%:t")))
-          \ . '.*\)'
-  endfunction
-
-  function! NVMentionsPattern() abort
-    return s:RustRegexEscape(
-          \ NVTagsTrimUID(NVTagsATXFirstH1(getline(1, '$')))
-          \ )
-  endfunction
-
-  command! -bang NVBacklinks execute 'NV<bang>' NVBacklinksPattern()
-  command! -bang NVMentions execute 'NV<bang>' NVMentionsPattern()
+  command! -bang NVBacklinks execute 'NV<bang>' nvtags#after#nv#backlinks_pattern()
+  command! -bang NVMentions execute 'NV<bang>' nvtags#after#nv#mentions_pattern()
 endif
 
 if exists('g:pandoc#loaded') && g:pandoc#loaded && match(g:pandoc#modules#disabled, "completion") == -1
-  let s:completer_pandoc = {}
-
-  function! s:completer_pandoc.findstart(base) dict abort
-    try
-      return pandoc#completion#Complete(1, a:base)
-    catch
-      return -1
-    endtry
-  endfunction
-
-  function! s:completer_pandoc.complete(base) dict abort
-    try
-      return pandoc#completion#Complete(0, a:base)
-    catch
-      return []
-    endtry
-  endfunction
-
-  call add(g:nvtags_completers, s:completer_pandoc)
+  call nvtags#after#pandoc#init()
 endif

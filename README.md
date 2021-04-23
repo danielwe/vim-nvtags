@@ -21,7 +21,7 @@ Typically, a tag line is added at or near the top of a file, like so:
 ```markdown
 # Heading 1
 
-  #all #the #tags
+  #all #the/tags
 
 Lorem ipsum...
 ```
@@ -31,12 +31,12 @@ Or, with a prefix, (required if `let g:nvtags_tagline_prefix` is set):
 ```markdown
 # Heading 1
 
-Tag list: #all #the #tags
+Tags: #all #the/tags
 
 Lorem ipsum...
 ```
 
-The full pattern used for matching tag lines is available in `g:nvtags_tagline_pattern`.
+The full pattern used for matching tag lines can be obtained by calling `nvtags#pattersn#tagline()`.
 
 ## Querying
 
@@ -49,40 +49,42 @@ The `:NVTags` command matches tag lines to a query using [`fzf`'s `--exact` mode
 
 Note that the search terms match on substrings: `:NVTags #tag1` will also match files tagged with `#tag12`, `#tag123`, and so on, and `:NVTags !#tag2` will only match files not tagged with any of `#tag23`, `#tag234`, and so on. This can be used to flexibly support hierarchical tagging: `#tag1` matches both `#tag1/subtag1` and `#tag1/subtag2`.
 
-The query can optionally begin with a number to limit the number of search results. For example, `:NVTags 5 #tag1` will return up to 5 files tagged with `#tag1`. These will be the first 5 lines returned from the search; see [Search result handling](#search-result-handling) for sort order.
+The query can optionally begin with a number to limit the number of search results. For example, `:NVTags 5 #tag1` will return up to 5 files tagged with `#tag1`. These will be the first 5 lines returned from the search; see [Search result handling](#search-result-handling) for sort order. (Note that there seems to be a strange bug in how vim parses command arguments that can sometimes break this functionality when the cursor is on the last line in the buffer and the command is called without an explicit line number.)
 
 The search by default starts in the working directory, but additional root directories can be configured using the variable `g:nvtags_search_paths`, which should contain a list of folder paths. The search will combine matches from the current directory and all folders listed in this variable.
 
 The command `:NVTagsHere`, uses the contents of the current line as the search query, discarding any prefix up to and including the last colon `:` on the line.
 
-The commands can be called with an optional line number, e.g., `:5NVTags <query>` or `.-1NVTagsHere`. The line number detemines where the link list is appended, but not which line the query is extracted from: `:NVTagsHere` always takes its query from the current cursor line.
+The commands can be called with an optional line number, e.g., `:5NVTags <query>` or `.-1NVTagsHere`. The line number determines where the link list is inserted, but not which line the query is extracted from: `:NVTagsHere` always takes its query from the current cursor line.
 
 The command `:NVTagsAll` runs `:NVTagsHere` on all query lines in the buffer. If `g:nvtags_tagline_prefix` remains unset, a query line is essentially the same as a tag line, but also allows fzf modifiers around the tag search terms, i.e., one of `',^,!,!^` at the start and/or `$` at the end. If `g:nvtags_tagline_prefix` is nonempty, a query line is any such line _except_ a valid tag line.
 
-Note that `:NVTagsAll` relies on a very rudimentary and experimental translation of regexes from rust syntax to vim syntax.<sup id="fnref1">[[1]](#fn1)</sup> The pattern used to match query lines can be inspected in `g:nvtags_queryline_pattern`.
+Note that `:NVTagsAll` relies on a very rudimentary and experimental translation of regex patterns from rust syntax to vim syntax.<sup id="fnref1">[[1]](#fn1)</sup> The pattern used to match query lines can be obtained from in `nvtags#patterns#queryline`.
 
 ## Search result handling
 
-`:NVTags[Here]` inserts a list of links to the matching files, grabbing the link label from the first H1 ATX heading in the file. The type of link can be customized through the parameter `g:nvtags_link_type`; valid values are `'wiki'` and `'markdown'`, default is `'wiki'`. For wiki links, the label is not added if it is identical to the address and thus redundant. For markdown links, the address is percent-encoded to obtain a valid URL, and the file's tag line is appended as link title (i.e., mouseover text). The links are sorted in inverse order of last modification time, such that the last modified matching file is listed first (sort order is not customizable at the moment).
+`:NVTags[Here]` inserts a list of links to the matching files, grabbing the link label from the first H1 ATX header in the file. The type of link can be customized through the parameter `g:nvtags_link_type`; valid values are `'wiki'` and `'markdown'`, the default is `'wiki'`. For wiki links, the label is not added if it is identical to the filename and thus redundant. For markdown links, the file path is percent-encoded to obtain a valid URL, and the contents of the file's tag line is appended as mouseover text (link "title"). The links are sorted in inverse order of last modification time, such that the last modified matching file is listed first. Sort order is not customizable at the moment.
 
-A Zettelkasten-style UID will be removed from the H1 heading to produce a less cluttered link label. To customize the UID pattern, set the variable `g:nvtags_uid_pattern` to an appropriate vim regex pattern. The default is `\v(^\d{12,}|\d{12,}$)`, i.e., 12 or more consecutive digits at the beginning or end of the heading.
+A Zettelkasten-style UID will be removed from the H1 header to produce a less cluttered link label. To customize the UID pattern, set the variable `g:nvtags_uid_pattern` to an appropriate vim regex pattern. The default is `\v(^\d{12,}|\d{12,}$)`, i.e., 12 or more consecutive digits at the beginning or end of the label.
 
-If no H1 heading is found the link label will be the file name without extension.
+The number of lines in each file to scan for headers can be customized by setting `g:nvtags_label_scan_num_lines`; the default is `10`. If no H1 header is found the link label will be the file name without extension.
 
-The command `:NVTagsClear` deletes a previously appended list of links below the given line.
+The command `:NVTagsClear` deletes a previously appended list of links below the given line. This functionality relies on the two blank spaces inserted on the line between the queryline and the link list inserted by `:NVTags[Here]`, so it's a good idea to not do too much editing of the inserted link lines.
 
-The banged commands `:NVTags!`, `NVTagsHere!`, and `:NVTagsAll!` _replace_ any previously inserted list of links instead of merely appending.
+The banged commands `:NVTags!`, `NVTagsHere!`, and `:NVTagsAll!` _replace_ any previously inserted list of links instead of merely appending, by calling `:NVTagsClear` before inserting.
 
 ## Filename filtering
 
 The `:NVTags*` commands start from the working directory and search all files that are not hidden or excluded by `.gitignore` and similar files and that matches all glob patterns in the list `g:nvtags_globs`. The default is `['*.md']`, only including markdown files with the most common extension. Some possibilities are:
 
 * `let g:nvtags_globs = ['*.md', '*.mkd', '*.markdown']`: Include any markdown extension.
-* `let g:nvtags_globs = ['*.md', '!*.html', '!templates/*']`: Exclude HTML files and files in the `templates` folder.
+* `let g:nvtags_globs = ['!*.html', '!templates/*']`: Exclude HTML files and files in the `templates` folder.
 
 ## Completion
 
-The plugin provides an omnifunc for autocompletion of wiki and markdown links, inspired by [wiki.vim](https:/github.com/lervag/wiki.vim). The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*.md'`, which matches markdown files at any depth in the folder hierarchies below the search paths.
+The plugin provides an omnifunc for autocompletion of wiki and markdown links, inspired by [wiki.vim](https:/github.com/lervag/wiki.vim) but with slightly different functionality, including [integrating pandoc bibliography completion](#interoperability-with-vim-pandoc) if enabled.
+
+The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*.*'`, which matches any file at any depth in the folder hierarchies below the search paths (the rationale for not restricting to `.md` files by default is to enable completing markdown image links).
 
 Currently, the omnifunc has four completion modes:
 
@@ -93,7 +95,7 @@ Currently, the omnifunc has four completion modes:
 
 The selected mode is the one that produces the shortest `<input>` string. In all cases, the text displayed in the popup menu is the link label as described under [Search result handling](#search-result-handling).
 
-Suggested autocompletion triggers if you use <https://github.com/Valloric/YouCompleteMe>:
+Suggested triggers for supported autocompletion engines can be obtained through functions under the `nvtags#triggers` namespace. The only supported engine at the moment is <https://github.com/Valloric/YouCompleteMe>. To use these triggers, add the following to your `.vimrc`:
 
 ```vim
 if !exists('g:ycm_semantic_triggers')
@@ -102,12 +104,14 @@ endif
 augroup ycm_triggers
   autocmd!
   autocmd! VimEnter *
-        \| let g:ycm_semantic_triggers.pandoc = ['[[', 're!\[\[[^\[\]#]+?\|', 're!\[[^\]]+?\]\(']
-        \| let g:ycm_semantic_triggers.markdown = ['[[', 're!\[\[[^\[\]#]+?\|', 're!\[[^\]]+?\]\(']
+        \| let g:ycm_semantic_triggers.pandoc = nvtags#triggers#ycm('pandoc')
+        \| let g:ycm_semantic_triggers.markdown = nvtags#triggers#ycm('markdown')
 augroup END
 ```
 
-Note that this will _not_ trigger completion mode 4, which would arguably be excessively intrusive, and these completion alternatives will often be discarded by the autocompletion engine anyway for being longer than 80 characters. Hit `<c-x><c-o>` to trigger this completion mode manually when desired (or add `'['` to the list of triggers if you really want to). (Note that if you're using YouCompleteMe the completion menu will likely just flash and disappear again on the first invocation of `<c-x><c-o>` at any given location; hit `<c-x><c-o>` again to make it stay. An alternative is to trigger YouCompleteMe manually using `<c-space>`, but note that the resulting alternatives will be subject to the 80 character limit.)
+The filename argument is optional but allows the triggers to be adapted as appropriate for integrated third-party omnifuncs. Specifically, this will add `@` as a trigger for the `pandoc` filetype if pandoc bibliography completion is loaded and [integrated](#interoperability-with-vim-pandoc).
+
+Note that the suggested will _not_ trigger completion mode 4; autotriggering of this mode is arguably too intrusive, and these completion alternatives will often be discarded by the autocompletion engine anyway for being longer than 80 characters. Hit `<c-x><c-o>` to trigger this completion mode manually when desired (or manually add `'['` to the list of triggers if you really want to: `nvtags#triggers#ycm() + ['[']`). (Note that if you're using YouCompleteMe the completion menu will likely just flash and disappear on the first invocation of `<c-x><c-o>` at a given location; hit `<c-x><c-o>` again to make it stay. An alternative is to trigger YouCompleteMe manually using `<c-space>`, but note that the results will then be subject to the 80 character limit.)
 
 ## Interoperability with `notational-vim-fzf`
 
@@ -115,22 +119,22 @@ If [`notational-fzf-vim`](https://github.com/alok/notational-fzf-vim) is install
 
 * For interactive tag searches:
   * `:NT[!] <query>`:
-  Starts an interactive fzf search over tag lines; like running `:execute 'NV[!]' g:nvtags_tagline_pattern`. The fzf query field will be prefilled with any arguments passed to `:NT` (this only works without the `!`).
+  Starts an interactive fzf search over tag lines; like running `:execute 'NV[!]' nvtags#patterns#tagline`. The fzf query field will be prefilled with any arguments passed to `:NT` (this only works without the `!`).
 
   * `:NTHere`:
   Like `:NT`, but extracts the prefilled fzf query from the current line, like `:NVTagsHere`.
 * For finding files that link to or mention the current file:
   * `NVBacklinks[!]`:
-  Starts an interactive fzf search over lines that contain a markdown link to the current file. More precisely, matching lines are lines with a link to a file of the same name regardless of path/directory, so false positives can occur if the name of the current file is not unique or there exist links to nonexistent files (ensuring that the links actually point to the current file isn't worth the logical complexity).
+  Starts an interactive fzf search over lines that contain a markdown link to the current file. More precisely, matching lines are lines with a link to a file of the same name regardless of path/directory, so false positives can occur if the name of the current file is not unique or there exist links to nonexistent files.
 
   * `NVMentions[!]`:
-  Starts an interactive fzf search over lines that contain the title of the current file. The title is taken to be the content of the first H1 ATX heading in the file, i.e., the first line starting with `# `.
+  Starts an interactive fzf search over lines that contain the title of the current file. The title is extracted from the file contents as explained under [Search result handling](#search-result-handling).
 
-In addition, if the variable `g:nvtags_search_paths` is unset it will be set identical to `g:nv_search_paths`.
+In addition, if the variable `g:nvtags_search_paths` is not set manually it will be set to the same as `g:nv_search_paths`.
 
 ## Interoperability with `vim-pandoc`
 
-If [`vim-pandoc`](https://github.com/vim-pandoc/vim-pandoc) is loaded with the completion module enabled, the provided omnifunc integrates with the pandoc omnifunc, so both link and bibliography completion work. You might want to set autocompletion triggers accordingly, i.e., add `'@'` to `g:ycm_semantic_triggers.pandoc`.
+If [`vim-pandoc`](https://github.com/vim-pandoc/vim-pandoc) is loaded with the completion module enabled, the provided omnifunc integrates with the pandoc omnifunc, so both link and bibliography completion work
 
 ## Usage tips
 
@@ -141,27 +145,27 @@ You can create a dynamic index page for a note collection by doing something lik
 
 **Journal**: #journal
   
-* [2019-08-28 New plugin out!](New%20plugin%20out%21%2020190828124102.md "#journal #vim")
+* [2019-08-28 New plugin out!](New%20plugin%20out%21%20201908281241.md "#journal #vim")
 * [...]
 
 **Current physics reading notes**: #article #physics !#archived
   
-* [Space-Time Approach to Non-Relativistic Quantum Mechanics [@Feynman1948]](%40Feynman1948%2020181224170000.md "#article #physics/quantum #Feynman")
+* [Space-Time Approach to Non-Relativistic Quantum Mechanics [@Feynman1948]](@Feynman1948%20201812241700.md "#article #physics/quantum #Feynman")
 * [...]
 
 **The two latest work meetings and talks**: 2 #work #meeting | #talk
   
-* [Meeting with project A stakeholders](Meeting%20with%20project%20A%20stakeholders%2020190715110311.md "#meeting #work/projectA")
-* [Department HSE briefing](Department%20HSE%20briefing%2020190712143148.md "#talk #work")
+* [Meeting with project A stakeholders](Meeting%20with%20project%20A%20stakeholders%20201907151103.md "#meeting #work/projectA")
+* [Department HSE briefing](Department%20HSE%20briefing%20201907121431.md "#talk #work")
 
 [...]
 ```
 
-Update each list by placing the cursor on the query line and running `:NVTagsHere!`. Update all of them at once by running `:NVTagsAll!`.
+Update each list by placing the cursor on the query line and running `:NVTagsHere!`. Update all of them at once by running `:NVTagsAll!`. The links shown above are markdown links as produced with `let g:nvtags_link_type == 'markdown'`.
 
 ## Similar plugins
 
-This plugin is heavily inspired by, and built to complement, <https://github.com/alok/notational-fzf-vim>, which provides interactive full-text search based on the same mechanism.
+This plugin is inspired by, and built to complement, <https://github.com/alok/notational-fzf-vim>, which provides interactive full-text search based on the same mechanism. The completion omnifunc is based on the one in <https://github.com/lervag/wiki.vim>.
 
 ## Proper documentation
 
