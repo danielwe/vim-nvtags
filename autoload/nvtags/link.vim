@@ -30,15 +30,17 @@ function! nvtags#link#relpath(path, refdir="") abort
   return py3eval('os.path.relpath(vim.eval("a:path"), vim.eval("a:refdir"))')
 endfunction
 
-function nvtags#link#label(path) abort
-  let l:label = s:firstATXH1(readfile(a:path, '', nvtags#get('label_scan_num_lines')))
+function! nvtags#link#label(path) abort
+  let l:label = nvtags#link#firstATXH1(
+        \ readfile(a:path, '', nvtags#get('label_scan_num_lines'))
+        \)
   if l:label == ""
     let l:label = fnamemodify(a:path, ':t:r')
   endif
-  return s:trimUID(l:label)
+  return nvtags#link#trimUID(l:label)
 endfunction
 
-function! s:firstATXH1(buflines) abort
+function! nvtags#link#firstATXH1(buflines) abort
   let l:index = match(a:buflines, '\v^#\ ')
   if l:index >= 0
     return trim(a:buflines[l:index][2:])
@@ -46,6 +48,6 @@ function! s:firstATXH1(buflines) abort
   return ""
 endfunction
 
-function! s:trimUID(label) abort
+function! nvtags#link#trimUID(label) abort
   return trim(substitute(a:label, nvtags#get('uid_pattern'), '', ''))
 endfunction
