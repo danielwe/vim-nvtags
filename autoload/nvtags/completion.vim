@@ -101,8 +101,8 @@ endfunction
 
 let s:_atx_pattern = '\v^#{1,6} '
 
-function s:get_anchors(file) abort
-  let l:anchors = []
+function s:get_headers(file) abort
+  let l:headers = []
   let l:counts = {}
   let l:preblock = 0
   for l:line in readfile(a:file)
@@ -113,25 +113,17 @@ function s:get_anchors(file) abort
     if l:preblock % 2 | continue | endif
 
     if l:line =~# s:_atx_pattern 
-      let l:header = trim(substitute(l:line, s:_atx_pattern, '', ''))
-      let l:anchor = s:toanchor(l:header)
-      if exists('l:counts["' . l:anchor . '"]')
-        let l:anchor .= "-" . l:counts[l:anchor]
-        let l:counts[l:anchor] += 1
+      let l:raw_header = trim(l:line)
+      let l:header = trim(substitute(l:raw_header, s:_atx_pattern, '', ''))
+      if exists('l:counts["' . l:header . '"]')
+        let l:counts[l:header] += 1
       else
-        let l:counts[l:anchor] = 1
+        let l:counts[l:header] = 0
       end
-      call add(l:anchors, [l:anchor, l:header])
+      call add(l:headers, [l:header, l:raw_header, l:counts[header]])
     endif
   endfor
-  return l:anchors
-endfunction
-
-function s:toanchor(header) abort
-  let l:anchor = tolower(a:header)
-  let l:anchor = substitute(l:anchor, '\v[^[:ident:]- ]+', '', 'g')
-  let l:anchor = substitute(l:anchor, ' ', '-', 'g')
-  return l:anchor
+  return l:headers
 endfunction
 
 let s:completer_wikianchor = {
@@ -155,15 +147,18 @@ function! s:completer_wikianchor.complete(base) dict abort
 
   let l:candidates = []
   for l:file in l:files
-    call extend(l:candidates, s:get_anchors(l:file))
+    call extend(l:candidates, s:get_headers(l:file))
   endfor
-  call map(l:candidates, 'self.entry(v:val[0], v:val[1])')
+  call map(l:candidates, 'self.entry(v:val[0], v:val[1], v:val[2])')
   call filter(l:candidates, 'match(v:val.abbr, a:base) >= 0')
   return l:candidates
 endfunction
 
-function! s:completer_wikianchor.entry(anchor, header) dict abort
-  return {'abbr': a:header, 'word': a:anchor, 'menu': '[anchor]'}
+function! s:completer_wikianchor.entry(header, raw_header, count) dict abort
+  if a:count > 0
+    return {'abbr': '', 'word': '', 'menu': ''}
+  endif
+  return {'abbr': a:raw_header, 'word': a:header, 'menu': '[anchor]'}
 endfunction
 
 let s:_url_pattern = percent#encoded_pattern()
@@ -177,6 +172,21 @@ function! s:completer_mdanchor.findstart(line) dict abort
   let l:basestart = self.findstart_core(a:line)
   let self['path'] = percent#decode(self['path'])
   return l:basestart
+endfunction
+
+function! s:completer_mdanchor.entry(header, raw_header, count) dict abort
+  let l:anchor = s:mdanchor(a:header, a:count)
+  return {'abbr': a:raw_header, 'word': l:anchor, 'menu': '[anchor]'}
+endfunction
+
+function s:mdanchor(header, count) abort
+  let l:anchor = tolower(a:header)
+  let l:anchor = substitute(l:anchor, '\v[^[:ident:]- ]+', '', 'g')
+  let l:anchor = substitute(l:anchor, ' ', '-', 'g')
+  if a:count > 0
+    let l:anchor .= "-" . a:count
+  endif
+  return l:anchor
 endfunction
 
 " label completion
