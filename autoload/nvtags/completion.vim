@@ -72,7 +72,7 @@ function! s:completer_wiki.entry(relpath, label) dict abort
 endfunction
 
 let s:completer_mdurl = deepcopy(s:completer_wiki)
-let s:completer_mdurl['startpattern'] = '\[[^\]]\{-}\](\zs[^)]\{-}$'
+let s:completer_mdurl['startpattern'] = '\[.\{-}\](\zs[^)]\{-}$'
 
 function! s:completer_mdurl.entry(relpath, label) dict abort
   return {'abbr': a:label, 'word': percent#encode(a:relpath), 'menu': '[mdurl]'}
@@ -164,9 +164,9 @@ endfunction
 let s:_url_pattern = percent#encoded_pattern()
 let s:completer_mdanchor = deepcopy(s:completer_wikianchor)
 let s:completer_mdanchor['pathstartpattern'] =
-      \ '\[[^\]]\{-}\](\zs' . s:_url_pattern . '\{-}#[[:ident:]-]\{-}$'
+      \ '\[.\{-}\](\zs' . s:_url_pattern . '\{-}#[[:ident:]-]\{-}$'
 let s:completer_mdanchor['basestartpattern'] =
-      \ '\[[^\]]\{-}\](' . s:_url_pattern . '\{-}#\zs[[:ident:]-]\{-}$'
+      \ '\[.\{-}\](' . s:_url_pattern . '\{-}#\zs[[:ident:]-]\{-}$'
 
 function! s:completer_mdanchor.findstart(line) dict abort
   let l:basestart = self.findstart_core(a:line)
