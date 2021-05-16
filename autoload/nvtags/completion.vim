@@ -127,8 +127,8 @@ function s:get_headers(file) abort
 endfunction
 
 let s:completer_wikianchor = {
-     \ 'pathstartpattern': '\[\[\zs[^\[\]#|]\{-}#[[:ident:]-]\{-}$',
-     \ 'basestartpattern': '\[\[[^\[\]#|]\{-}#\zs[[:ident:]-]\{-}$',
+     \ 'pathstartpattern': '\[\[\zs[^\[\]#|]\{-}#[^\[\]|]\{-}$',
+     \ 'basestartpattern': '\[\[[^\[\]#|]\{-}#\zs[^\[\]|]\{-}$',
      \}
 
 function! s:completer_wikianchor.findstart_core(line) dict abort
@@ -215,10 +215,10 @@ function! s:completer_wikilabel.complete(base) dict abort
     let l:files = s:path_candidates(self['anchpath'])
     let l:anchcandidates = []
     for l:file in l:files
-      call extend(l:anchcandidates, s:get_anchors(l:file))
+      call extend(l:anchcandidates, s:get_headers(l:file))
     endfor
     call filter(l:anchcandidates, 'v:val[0] == self["anchor"]')
-    call map(l:anchcandidates, 'self.anchentry(v:val[1])')
+    call map(l:anchcandidates, 'self.anchentry(v:val[0])')
     call extend(l:candidates, l:anchcandidates)
   endif
 
