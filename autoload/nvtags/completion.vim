@@ -68,14 +68,18 @@ function! s:completer_wiki.complete(base) dict abort
 endfunction
 
 function! s:completer_wiki.entry(relpath, label) dict abort
-  return {'abbr': a:label, 'word': nvtags#link#wiki(a:relpath)[2:-3], 'menu': '[wiki]'}
+  return {
+        \ 'abbr': a:label,
+        \ 'word': nvtags#link#wiki(a:relpath)[2:-3],
+        \ 'menu': '[nvtags:wiki]',
+        \}
 endfunction
 
 let s:completer_mdurl = deepcopy(s:completer_wiki)
 let s:completer_mdurl['startpattern'] = '\[.\{-}\](\zs[^)]\{-}$'
 
 function! s:completer_mdurl.entry(relpath, label) dict abort
-  return {'abbr': a:label, 'word': percent#encode(a:relpath), 'menu': '[mdurl]'}
+  return {'abbr': a:label, 'word': percent#encode(a:relpath), 'menu': '[nvtags:md]'}
 endfunction
 
 let s:completer_mdlabel = deepcopy(s:completer_mdurl)
@@ -83,7 +87,7 @@ let s:completer_mdlabel['startpattern'] = '\(^\|[^\[]\)\[\zs[^\[)]\{-}$'
 
 function! s:completer_mdlabel.entry(relpath, label) dict abort
   let l:link = nvtags#link#markdown(a:relpath, a:label)
-  return {'abbr': a:label, 'word': l:link[1:-2], 'menu': '[mdlabel]'}
+  return {'abbr': a:label, 'word': l:link[1:-2], 'menu': '[nvtags:mdlabel]'}
 endfunction
 
 " anchor completion
@@ -158,7 +162,7 @@ function! s:completer_wikianchor.entry(header, raw_header, count) dict abort
   if a:count > 0
     return {'abbr': '', 'word': '', 'menu': ''}
   endif
-  return {'abbr': a:raw_header, 'word': a:header, 'menu': '[anchor]'}
+  return {'abbr': a:raw_header, 'word': a:header, 'menu': '[nvtags:wikianchor]'}
 endfunction
 
 let s:_url_pattern = percent#encoded_pattern()
@@ -176,7 +180,7 @@ endfunction
 
 function! s:completer_mdanchor.entry(header, raw_header, count) dict abort
   let l:anchor = s:mdanchor(a:header, a:count)
-  return {'abbr': a:raw_header, 'word': l:anchor, 'menu': '[anchor]'}
+  return {'abbr': a:raw_header, 'word': l:anchor, 'menu': '[nvtags:mdanchor]'}
 endfunction
 
 function s:mdanchor(header, count) abort
@@ -227,11 +231,11 @@ function! s:completer_wikilabel.complete(base) dict abort
 endfunction
 
 function! s:completer_wikilabel.entry(path) dict abort
-  return {'word': nvtags#link#label(a:path), 'menu': '[wikilabel]'}
+  return {'word': nvtags#link#label(a:path), 'menu': '[nvtags:wikilabel]'}
 endfunction
 
 function! s:completer_wikilabel.anchentry(header) dict abort
-  return {'word': a:header, 'menu': '[wikilabel]'}
+  return {'word': a:header, 'menu': '[nvtags:wikilabel]'}
 endfunction
 
 function! nvtags#completion#init_buffer()

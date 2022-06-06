@@ -88,15 +88,16 @@ The plugin provides an omnifunc for autocompletion of wiki and markdown links, i
 
 The omnifunc is enabled for files with extensions in `g:nvtags_extensions`; the default is `['md', 'mkd', 'markdown']`. Make sure to load this plugin after `pandoc` and `wiki.vim` in order for this omnifunc to take precedence.
 
-The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*'`, which matches any file with extension at any depth in the folder hierarchies below the search paths (the rationale for not restricting to a markdown extension by default is to enable completing markdown image links).
+The omnifunc looks for files in the same directories as `NVTags` et al., see [Querying](#querying). The files to match can be specified by setting the variable `g:nvtags_completion_glob`; the default is `'**/*'`, which matches any file with any extension at any depth in the folder hierarchies below the search paths (the rationale for not restricting to a markdown extension by default is to enable completing markdown image links).
 
-Currently, the omnifunc has five completion modes:
+Currently, the omnifunc has six completion modes:
 
-* `[wiki]`: The completion alternatives following `[[<input>` are relative paths to files.
-* `[mdurl]`: The completion alternatives following `[<label>](<input>` are markdown link URLs to files.
-* `[mdlabel]`: The completion alternatives following `[<input>` are full markdown links to files, with label and URL as described under [Search result handling](#search-result-handling).
-* `[anchor]`: The completion alternatives following `[[<file path>#<input>` and `[<label>](<file path>#<input>` are anchors to headers in the given file. For markdown links, an attempt is made to approximate as closely as possible the mapping of headers to anchors used in common markdown renderers such as github. For wiki links the anchors are the headers without their prefixed hashes, with no further processing (thus there is no disambiguation of repeated headers in a file).
-* `[wikilabel]`: The sole completion alternative following `[[<file path>|<input>` is the link label extracted from the given file, as described under [Search result handling](#search-result-handling). Similarly, the completion alternative following `[[<file_path>#<anchor>|<input>` is the contents of the header that the anchor points to.
+* `[nvtags:wiki]`: The completion alternatives following `[[<input>` are relative paths to files, stripped of any extension.
+* `[nvtags:md]`: The completion alternatives following `[<label>](<input>` are markdown link URLs to files.
+* `[nvtags:wikianchor]`: The completion alternatives following `[[<file path>#<input>` are wikilink anchors to headers in the given file. The anchor format is compatible with `wiki.vim` link following: anchors are formed from headers by removing prefixed hashes, with no further processing (thus there is no disambiguation of repeated headers in a file).
+* `[nvtags:mdanchor]`: The completion alternatives following `[<label>](<file path>#<input>` are markdown link anchors to headers in the given file. The anchor format attempts to approximate as closely as possible the anchors used in common markdown renderers such as github.
+* `[nvtags:wikilabel]`: The sole completion alternative following `[[<file path>|<input>` is the link label extracted from the given file, as described under [Search result handling](#search-result-handling). Similarly, the completion alternative following `[[<file_path>#<anchor>|<input>` is the contents of the header that the anchor points to.
+* `[nvtags:mdlabel]`: The completion alternatives following `[<input>` are full markdown links to files, with label and URL as described under [Search result handling](#search-result-handling).
 
 The selected mode is the one that produces the shortest `<input>` string. In all cases, the text displayed in the popup menu is the link label as described under [Search result handling](#search-result-handling), or the relevant header in the case of anchor completion.
 
